@@ -1,6 +1,6 @@
 import re
-from riscvdata import REGISTER_MAP, PSEUDO_INSTRUCTION_MAP, INSTRUCTION_MAP
-from utils import sign_extend_str, twos_complement_str
+from riscvlib.riscvdata import REGISTER_MAP, PSEUDO_INSTRUCTION_MAP, INSTRUCTION_MAP
+from riscvlib.utils import sign_extend_str, twos_complement_str
 
 
 def _get_instruction_type(mnemonic):
@@ -339,15 +339,3 @@ class SBInstruction(Instruction):
 
     def __str__(self):
         return f"{self.mnemonic} {self.args[0]}, {self.args[1]}, {self.args[2]}"
-
-
-print(Instruction.from_line("add x1, x2, x3").to_bytes())
-print(Instruction.from_line("lw x6, 0(x5)").to_bytes())
-print(Instruction.from_line("sw x7, 0(x5)").to_bytes())
-try:
-    print(Instruction.from_line("li x7, 0xff5"))
-except KeyError:
-    i_list = translate_pseudo_instruction("li", ['x7', '0xff5'])
-    for i in i_list:
-        print(Instruction.from_line(i).to_bytes())
-
