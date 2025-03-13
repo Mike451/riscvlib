@@ -12,7 +12,7 @@ def _get_instruction_type(mnemonic):
     return INSTRUCTION_MAP[mnemonic][4]
 
 
-def translate_pseudo_instruction(mnemonic, args):
+def translate_pseudo_instruction(mnemonic, *args):
     """
     Convert a pseudo instruction into one or more standard instructions and apply args
     :param mnemonic: str - the instruction mnemonic
@@ -105,11 +105,6 @@ class Instruction:
     def _build(self):
         # do all the real work
         raise NotImplementedError("Implement in derived class")
-
-    '''def __str__(self):
-        if self.label:
-            return f"{self.mnemonic} {self.args} *->{self.label}"
-        return f"{self.mnemonic} {self.args}"'''
 
 
 def parse_riscv_instruction_line(instruction):
@@ -302,9 +297,9 @@ class UJInstruction(Instruction):
 
         imm_21_signed = imm_raw[::-1]  # reverse for sanity
 
-        out_sign =  imm_21_signed[-1]  # sign
+        out_sign = imm_21_signed[-1]  # sign
         out_12_19 = imm_21_signed[12:20]  # LSBs
-        out_11  = imm_21_signed[11]
+        out_11 = imm_21_signed[11]
         out_1_10 = imm_21_signed[1:11]  # ignore lsb because always even
 
         out_bits = f"{out_12_19}{out_11}{out_1_10}{out_sign}"[::-1]
@@ -333,7 +328,7 @@ class SBInstruction(Instruction):
         immd12_signed_bin = parse_immediate(self.args[2], bits=12)
         imb_i12 = immd12_signed_bin[0]  # sign bit
         imb_i11 = immd12_signed_bin[0]  # sign bit... again
-        imb_4 = immd12_signed_bin[7:11] # 4 lsb left right shift 1 fill, because only multiples of 2
+        imb_4 = immd12_signed_bin[7:11]  # 4 lsb left right shift 1 fill, because only multiples of 2
         imb_6 = immd12_signed_bin[1:7]  # 6 msb are as they should be
         self._bits = f"{imb_i12}{imb_6}{rs2:05b}{rs1:05b}{self.func3}{imb_4}{imb_i11}{self.opcode}"
 

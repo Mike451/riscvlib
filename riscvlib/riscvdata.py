@@ -97,7 +97,7 @@ PSEUDO_INSTRUCTION_MAP = {
     "ble": ["bge %arg0, %arg2, %arg1"],  # Branch if ≤
     "bgtu": ["bltu %arg0, %arg2, %arg1"],  # Branch if >, unsigned
     "bleu": ["bltu %arg0, %arg2, %arg1"],  # Branch if ≤, unsigned
-    "la": ["lui %arg0, %hi(%arg)", "addi %arg0, %arg0, %lo(%arg1)"],
+    "la": ["lui %arg0, %hi(%arg1)", "addi %arg0, %arg0, %lo(%arg1)"],
 }
 
 # list of pseudo instructions
