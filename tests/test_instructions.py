@@ -29,8 +29,7 @@ class TestInstructions(unittest.TestCase):
         i = Instruction.from_line("andi a0, a1, -13")
         self.assertEqual("11111111001101011111010100010011", i.to_bitstring())
 
-        # hex immediate
-        i = Instruction.from_line("ori s1, x13, 0x765")
+        i = Instruction.from_line("ori x9, x13, 1893")
         self.assertEqual("01110110010101101110010010010011", i.to_bitstring())
 
         # hex immediate also neg
