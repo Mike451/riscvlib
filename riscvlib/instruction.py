@@ -106,6 +106,9 @@ class Instruction:
         # do all the real work
         raise NotImplementedError("Implement in derived class")
 
+    def __repr__(self):
+        return f"{self.__class__.__name__} '{self.mnemonic}' {self.args}"
+
 
 def parse_riscv_instruction_line(instruction):
     """
@@ -184,9 +187,6 @@ class RInstruction(Instruction):
 class IInstruction(Instruction):
     """
     # immediate type
-    # imm[11:0] rs1 funct3 rd opcode
-    range from -2048 to 2047 (in signed decimal representation).
-    So, the maximum value you can use with ADDI is 2047. The smallest is -2048.
     "addi",   "slli", "slti", "sltiu", "xori", "slri", "srai", "ori", "andi", "addiw",
     "slliw", "srliw", "sraiw","jalr", "ecall", "ebreak","CSRRW", "CSRRS", "CSRRC",
     "CSRRWI", "CSRRSI", "CSRRCI"
@@ -213,7 +213,6 @@ class IInstruction(Instruction):
 class ILInstruction(Instruction):
     """
     covers load type IL instructions with the pattern:  inst rd, offset(r1)
-    opcode: 0000011
     similar to S instruction
     "lb", "lw", "ld", "lbu", "lhu", "lwu",
     """
@@ -285,7 +284,6 @@ class UJInstruction(Instruction):
     """
      21-bit value in the range of [−1048576..1048574] [-0x100000..0x0ffffe]1561
      representing a pc-relative offset to the target address
-     RD will be set to PC+4, Setting RD=x0 is how the j pseudo instr. is implemented
      jal x0, -8
     """
 
@@ -306,7 +304,7 @@ class UJInstruction(Instruction):
         self._bits = f"{out_bits}{rd:05b}{self.opcode}"
 
     def __str__(self):
-        # the J type has a varying number of args based on mnemonic
+        # the UJ type has a varying number of args based on mnemonic
         if self.mnemonic == "jal":
             return f"{self.mnemonic} {self.args[0]}, {self.args[1]}"
         elif self.mnemonic == "jalr":
