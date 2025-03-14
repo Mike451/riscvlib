@@ -73,12 +73,13 @@ INSTRUCTION_MAP = {
 
 # map pseudo instruction name --> implementation with arg placeholders
 PSEUDO_INSTRUCTION_MAP = {
-    "mv": ["add %arg0, %arg1, x0"],  # move
-    "nop": ["add x0, x0, x0"],   # no op
+    "mv": ["addi %arg0, %arg1, 0"],  # move
+    "nop": ["addi x0, x0, 0"],   # no op
     "not": ["xori %arg0, %arg1, -1"],  # One's complement
-    "neg": ["sub %argo, x0, %arg1"],  # Two's complement
+    "neg": ["sub %arg0, x0, %arg1"],  # Two's complement
     "seqz": ["sltiu %arg0, %arg1, 1"],  # Set if = zero
     "li": ["addi %arg0, x0, %arg1"],
+    "call": ["jal x1, %arg0"],   # invoke subroutines
 
     # jumps/returns
     "j": ["jal x0, %arg0"],    # Jump
@@ -93,10 +94,11 @@ PSEUDO_INSTRUCTION_MAP = {
     "bltz": ["blt %arg0, x0, %arg1"],  # Branch if < zero
     "bgtz": ["blt x0, %arg0, %arg1"],  # Branch if > zero
     # Note: args pos change
-    "bgt": ["blt %arg0, %arg2, %arg1"],  # Branch if >
-    "ble": ["bge %arg0, %arg2, %arg1"],  # Branch if ≤
-    "bgtu": ["bltu %arg0, %arg2, %arg1"],  # Branch if >, unsigned
-    "bleu": ["bltu %arg0, %arg2, %arg1"],  # Branch if ≤, unsigned
+    "bgt": ["blt %arg1, %arg0, %arg2"],  # Branch if >
+    "ble": ["bge %arg1, %arg0, %arg2"],  # Branch if ≤
+    "bgtu": ["bltu %arg1, %arg0, %arg2"],  # Branch if >, unsigned
+    "bleu": ["bgeu %arg1, %arg0, %arg2"],  # Branch if ≤, unsigned
+    # mult instructs returned
     "la": ["lui %arg0, %hi(%arg1)", "addi %arg0, %arg0, %lo(%arg1)"],
 }
 
