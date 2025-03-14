@@ -22,7 +22,7 @@ b'\xb3\x001\x00'
 <riscvlib.instruction.RInstruction object at 0x....>
 ```
 
-## Specific instruction type
+## Specific Instruction Type
 ``` python
 >> from riscvlib.instruction import RInstruction, IInstruction
 
@@ -54,7 +54,7 @@ b'\x13\xf55\xff'
 ``` python
 >> from riscvlib.risvdata import INSTRUCTION_MAP
 
->>> INSTRUCTION_MAP['mul']
+>> INSTRUCTION_MAP['mul']
 ('MUL', '0110011', '000', '0000001', 'R', 'm')
 # (name, opcode, func3, func7, itype, extension)
 ```
