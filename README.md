@@ -1,6 +1,7 @@
 # riscvlib  
   
-Resources for working with RiscV assembly in Python.   
+Resources for working with RiscV assembly in Python. 
+Supporting RV32IM instruction creation, pdeudo instruction translation and register lookup.
   
 # Installation  
 The package can be installed using pip:  
@@ -19,7 +20,7 @@ add x1, x2, x3
 >> i.to_bytes() 
 b'\xb3\x001\x00'  
 >> i  
-<riscvlib.instruction.RInstruction object at 0x....>
+RInstruction 'add' ['x1', 'x2', 'x3']
 ```
 
 ## Specific Instruction Type

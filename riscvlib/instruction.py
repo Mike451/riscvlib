@@ -47,7 +47,7 @@ class Instruction:
         # look up and set: opcode, func3 and func7 for a given mnemonic
         self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
         self.args = list(args)
-        self.label = label  # label associated with this instruction i.e StartLoop: mov x1, x3
+        self.label = label  # label associated with this instruction i.e StartLoop: mv x1, x3
         self.extra_offset = extra_offset  # this was a bonus instruction from a pseudo and adds extra offset ??
 
     @staticmethod
@@ -75,9 +75,6 @@ class Instruction:
             return SBInstruction(mnemonic, *args)
         else:
             raise ValueError(f"Unknown mnemonic '{mnemonic}'")
-
-    def build(self):
-        self._build()
 
     def to_bitstring(self):
         """
@@ -171,7 +168,7 @@ def parse_address_offset_register(offset_reg_str):
 
 class RInstruction(Instruction):
     """
-    Regular instruction
+    Regular instruction i.e add x1, x3, x5
     """
 
     def _build(self):
@@ -195,12 +192,7 @@ class IInstruction(Instruction):
         rd = REGISTER_MAP[self.args[0]][1]
         rs1 = REGISTER_MAP[self.args[1]][1]
 
-        # check for and get function
-        immed = self.args[2]
-
-        # eval expressions if any for the immediate, vars & const have been eval by now
-        # so this should be int,bin, hex
-        immed = str(immed)
+        immed = str(self.args[2])
 
         # format immediate as signed binary string
         immd12_signed_bin = parse_immediate(immed)
@@ -235,9 +227,6 @@ class SInstruction(Instruction):
     The SW, SH, and SB instructions store 32-bit, 16-bit, and 8-bit values from the low
     bits of register rs2 to memory.
 
-    The effective byte address is obtained by adding register rs1 to the sign-extended 12-bit offset.
-    The load and store memory offset is a signed 12-bit value, so you can access memory locations
-    between -2048 and +2047 bytes from the base address in the register.
     i.e. sw s0,24(sp)
     "sw", "sb", "sh", "sd"
     """
