@@ -47,7 +47,7 @@ class Instruction:
         # look up and set: opcode, func3 and func7 for a given mnemonic
         self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
         self.args = list(args)
-        self.label = label  # label associated with this instruction i.e StartLoop: mov x1, x3
+        self.label = label  # label associated with this instruction i.e StartLoop: mv x1, x3
         self.extra_offset = extra_offset  # this was a bonus instruction from a pseudo and adds extra offset ??
 
     @staticmethod
@@ -76,9 +76,6 @@ class Instruction:
         else:
             raise ValueError(f"Unknown mnemonic '{mnemonic}'")
 
-    def build(self):
-        self._build()
-
     def to_bitstring(self):
         """
         Output value as a bitstring
@@ -105,6 +102,9 @@ class Instruction:
     def _build(self):
         # do all the real work
         raise NotImplementedError("Implement in derived class")
+
+    def __repr__(self):
+        return f"{self.__class__.__name__} '{self.mnemonic}' {self.args}"
 
 
 def parse_riscv_instruction_line(instruction):
@@ -168,7 +168,7 @@ def parse_address_offset_register(offset_reg_str):
 
 class RInstruction(Instruction):
     """
-    Regular instruction
+    Regular instruction i.e add x1, x3, x5
     """
 
     def _build(self):
@@ -184,9 +184,6 @@ class RInstruction(Instruction):
 class IInstruction(Instruction):
     """
     # immediate type
-    # imm[11:0] rs1 funct3 rd opcode
-    range from -2048 to 2047 (in signed decimal representation).
-    So, the maximum value you can use with ADDI is 2047. The smallest is -2048.
     "addi",   "slli", "slti", "sltiu", "xori", "slri", "srai", "ori", "andi", "addiw",
     "slliw", "srliw", "sraiw","jalr", "ecall", "ebreak","CSRRW", "CSRRS", "CSRRC",
     "CSRRWI", "CSRRSI", "CSRRCI"
@@ -195,12 +192,7 @@ class IInstruction(Instruction):
         rd = REGISTER_MAP[self.args[0]][1]
         rs1 = REGISTER_MAP[self.args[1]][1]
 
-        # check for and get function
-        immed = self.args[2]
-
-        # eval expressions if any for the immediate, vars & const have been eval by now
-        # so this should be int,bin, hex
-        immed = str(immed)
+        immed = str(self.args[2])
 
         # format immediate as signed binary string
         immd12_signed_bin = parse_immediate(immed)
@@ -213,7 +205,6 @@ class IInstruction(Instruction):
 class ILInstruction(Instruction):
     """
     covers load type IL instructions with the pattern:  inst rd, offset(r1)
-    opcode: 0000011
     similar to S instruction
     "lb", "lw", "ld", "lbu", "lhu", "lwu",
     """
@@ -236,9 +227,6 @@ class SInstruction(Instruction):
     The SW, SH, and SB instructions store 32-bit, 16-bit, and 8-bit values from the low
     bits of register rs2 to memory.
 
-    The effective byte address is obtained by adding register rs1 to the sign-extended 12-bit offset.
-    The load and store memory offset is a signed 12-bit value, so you can access memory locations
-    between -2048 and +2047 bytes from the base address in the register.
     i.e. sw s0,24(sp)
     "sw", "sb", "sh", "sd"
     """
@@ -250,7 +238,7 @@ class SInstruction(Instruction):
         # offset val for rs1 --> sign extended 12 bits
         offset_val_str = f"{parse_immediate(self.args[2], bits=12, signed=True)}"
 
-        # this is a thing for some reason
+        # split immediate
         imm5 = offset_val_str[7:]
         imm7 = offset_val_str[0:7]
 
@@ -285,7 +273,6 @@ class UJInstruction(Instruction):
     """
      21-bit value in the range of [−1048576..1048574] [-0x100000..0x0ffffe]1561
      representing a pc-relative offset to the target address
-     RD will be set to PC+4, Setting RD=x0 is how the j pseudo instr. is implemented
      jal x0, -8
     """
 
@@ -306,7 +293,7 @@ class UJInstruction(Instruction):
         self._bits = f"{out_bits}{rd:05b}{self.opcode}"
 
     def __str__(self):
-        # the J type has a varying number of args based on mnemonic
+        # the UJ type has a varying number of args based on mnemonic
         if self.mnemonic == "jal":
             return f"{self.mnemonic} {self.args[0]}, {self.args[1]}"
         elif self.mnemonic == "jalr":
