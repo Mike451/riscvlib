@@ -1,7 +1,7 @@
 # riscvlib  
   
 Resources for working with RiscV assembly in Python. 
-Supporting RV32IM instruction creation, pdeudo instruction translation and register lookup.
+Supporting RV32IM instruction creation, pseudo instruction translation and register lookup.
   
 # Installation  
 The package can be installed using pip:  
@@ -44,7 +44,7 @@ b'\x13\xf55\xff'
 
 >> out_list = translate_pseudo_instruction("mv", "a0", "x30")
 >> print(out_list)
-['add a0, x30, x0']
+['addi a0, x30, 0']
 
 >> out_list = translate_pseudo_instruction("la", "a0", "400")
 >> print(out_list)
@@ -61,8 +61,12 @@ b'\x13\xf55\xff'
 ```
 
 # Limitations
- - Currently only supports 32bit instructions 
- - I and M extensions supported  (will add F in the future)
+ - Currently only supports RV32IM (RiscV 32 bit I and M extensions)
+
+# Future
+ - Add B extension
+ - Add F extension/register look-ups
+ - 64 bit support (far future)
 
 
 

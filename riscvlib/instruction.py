@@ -238,7 +238,7 @@ class SInstruction(Instruction):
         # offset val for rs1 --> sign extended 12 bits
         offset_val_str = f"{parse_immediate(self.args[2], bits=12, signed=True)}"
 
-        # this is a thing for some reason
+        # split immediate
         imm5 = offset_val_str[7:]
         imm7 = offset_val_str[0:7]
 
