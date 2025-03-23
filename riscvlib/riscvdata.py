@@ -31,7 +31,6 @@ INSTRUCTION_MAP = {
     'slti': ('SLTI', '0010011', '010', None, 'I', 'i'),
     'sltiu': ('SLTIU', '0010011', '011', None, 'I', 'i'),
     'xori': ('XORI', '0010011', '100', None, 'I', 'i'),
-    'slri': ('SLRI', '0010011', '101', '0000000', 'I', 'i'),
     'srai': ('SRAI', '0010011', '101', '0100000', 'I', 'i'),
     'ori': ('ORI', '0010011', '110', None, 'I', 'i'),
     'andi': ('ANDI', '0010011', '111', None, 'I', 'i'),
@@ -68,7 +67,24 @@ INSTRUCTION_MAP = {
     'div': ('DIV', '0110011', '100', '0000001', 'R', 'm'),
     'divu': ('DIVU', '0110011', '101', '0000001', 'R', 'm'),
     'rem': ('REM', '0110011', '110', '0000001', 'R', 'm'),
-    'remu': ('REMU', '0110011', '111', '0000001', 'R', 'm')
+    'remu': ('REMU', '0110011', '111', '0000001', 'R', 'm'),
+    'andn': ('ANDN', '0110011', '111', '0100000', 'R', 'b'),
+    'orn': ('ORN', '0110011', '110', '0100000', 'R', 'b'),
+    'xnor': ('XNOR', '0110011', '100', '0100000', 'R', 'b'),
+    'clz': ('CLZ', '0010011', '001', '0110000', 'I', 'b'),
+    'ctz': ('CTZ', '0010011', '001', '0000001', 'I', 'b'),
+    'pcnt': ('PCNT', '0010011', '001', '0000010', 'I', 'b'),
+    'rol': ('ROL', '0110011', '001', '0110000', 'R', 'b'),
+    'ror': ('ROR', '0110011', '101', '0110000', 'R', 'b'),
+    'rev8': ('REV8', '0110011', '110', '0110100', 'R', 'b'),
+    'clmul': ('CLMUL', '0110011', '001', '0000101', 'R', 'b'),
+    'clmulr': ('CLMULR', '0110011', '101', '0000101', 'R', 'b'),
+    'clmulh': ('CLMULH', '0110011', '011', '0000101', 'R', 'b'),
+    'bclr': ('BCLR', '0110011', '001', '0100100', 'R', 'b'),
+    'bset': ('BSET', '0110011', '001', '0010100', 'R', 'b'),
+    'binv': ('BINV', '0110011', '001', '0110100', 'R', 'b'),
+    'bext': ('BEXT', '0110011', '101', '0100100', 'R', 'b'),
+    'bdep': ('BDEP', '0110011', '101', '0110100', 'R', 'b'),
 }
 
 # map pseudo instruction name --> implementation with arg placeholders
@@ -100,7 +116,12 @@ PSEUDO_INSTRUCTION_MAP = {
     "bleu": ["bgeu %arg1, %arg0, %arg2"],  # Branch if ≤, unsigned
     # mult instructs returned
     "la": ["lui %arg0, %hi(%arg1)", "addi %arg0, %arg0, %lo(%arg1)"],
+    # b ext
+    "snez": ["sltu %arg0, x0, %arg1"],  # Set rd to 1 if rs1 is non-zero, else 0
+    "sltz": ["slt %arg0, %arg1, x0"],  # Set rd to 1 if rs1 < 0, else 0
+    "sgtz": ["slt %arg0, x0, %arg1"],  # Set rd to 1 if rs1 > 0, else 0
 }
+
 
 # list of pseudo instructions
 pseudo_instr_list = list(PSEUDO_INSTRUCTION_MAP.keys())

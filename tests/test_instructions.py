@@ -36,6 +36,10 @@ class TestInstructions(unittest.TestCase):
         i = Instruction.from_line("ori s0, x12, 0xFED")
         self.assertEqual("11111110110101100110010000010011", i.to_bitstring())
 
+        # I with 5 bit immed and func7
+        i = Instruction.from_line("srai x1, x3, 31")
+        self.assertEqual("01000001111100011101000010010011", i.to_bitstring())
+
     def test_IL_instructions(self):
         # type IL in the assembler, loads
 
@@ -155,3 +159,17 @@ class TestPseudoInstructions(unittest.TestCase):
         # 'la' expands to 2 instructions
         out = translate_pseudo_instruction("la", "x3", "4000")
         self.assertEqual(2, len(out))
+
+
+class TestBExtension(unittest.TestCase):
+
+    def test_R_B_instructions(self):
+        i = Instruction.from_line("andn x1, x2, x3")
+        self.assertEqual("01000000001100010111000010110011", i.to_bitstring())
+
+    def test_I_B_instructions(self):
+        # Immediate type instructions
+        i = Instruction.from_line("clz x1, x3")
+        self.assertEqual("01100000000000011001000010010011", i.to_bitstring())
+
+
