@@ -192,11 +192,17 @@ class IInstruction(Instruction):
         rd = REGISTER_MAP[self.args[0]][1]
         rs1 = REGISTER_MAP[self.args[1]][1]
 
-        immed = str(self.args[2])
+        # I type with 2 args, both regs, encode zeros for immediate
+        immed = str(self.args[2] if len(self.args)==3 else 0)
 
-        # format immediate as signed binary string
-        immd12_signed_bin = parse_immediate(immed)
-        self._bits = f"{immd12_signed_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+        if self.func7 is not None:
+            # some I type have a funct7 which needs to be encoded at the expense of the immediate val.
+            immd5_signed_bin = parse_immediate(immed, bits=5)
+            self._bits = f"{self.func7}{immd5_signed_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+        else:
+            # format immediate as signed binary string
+            immd12_signed_bin = parse_immediate(immed)
+            self._bits = f"{immd12_signed_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
 
     def __str__(self):
         return f"{self.mnemonic} {self.args[0]}, {self.args[1]}, {self.args[2]}"
