@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="riscvlib",
-    version="0.4.0",
+    version="0.5.0",
     author="Mike Harris",
     author_email="mike.harris451@gmail.com",
-    description="Resources for working with RiscV in Python",
+    description="Resources for working with RISC-V in Python",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/Mike451/riscvlib",
