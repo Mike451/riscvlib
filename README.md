@@ -1,7 +1,12 @@
 # riscvlib  
   
 Resources for working with RISC-V assembly in Python. 
-Supporting RV32IMB(Zba, Zbb, Zbc, Zbs) instruction creation, pseudo instruction translation and register lookup.
+Supporting instruction creation, pseudo instruction translation and register lookup for extenions: 
+    - M Multiply and Divide
+    - B (Zba, Zbb, Zbc, Zbs) bit manipulation
+    - Zifencei  ebreak and ecall 
+    - Zicsr Control register instructions
+
   
 # Installation  
 The package can be installed using pip:  
