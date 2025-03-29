@@ -1,4 +1,26 @@
 
+class RNDMode:
+    #  Used in F extension as a sub for func3; compiler sets rounding mode for instruction
+    # TODO: Convert into enum when py version supports
+    RNE = '000'  # round nearest
+    RTZ = '001'  # round towards zero
+    RDN = '010'  # round down
+    RUP = '011'  # round up
+    RMM = '100'  # round nearest, ties to max magnitude
+    RSV0 = '101'  # Reserved
+    RSV1 = '101'  # Reserved
+    DYN = '111'  # Dynamic - Rounding mode set by target machine via fp control register
+
+    @staticmethod
+    def modes():
+        return (
+            RNDMode.RNE,
+            RNDMode.RDN,
+            RNDMode.RUP,
+            RNDMode.RMM,
+            RNDMode.DYN
+        )
+
 
 #  instruction: (name, opcode, func3, func7, itype, ext)
 INSTRUCTION_MAP = {
@@ -86,18 +108,20 @@ INSTRUCTION_MAP = {
     'csrrwi': ('CSRRWI', '1110011', '101', None, 'I', 'zicsr'),
     'csrrsi': ('CSRRSI', '1110011', '110', None, 'I', 'zicsr'),
     'csrrci': ('CSRRCI', '1110011', '111', None, 'I', 'zicsr'),
+
     # Note: F instruction Rounding Mode (RM) set by the "func3" field. This may change.
-    'fadd.s': ('FADD.S', '1010011', '000', '0000000', 'R', 'f'),
-    'fsub.s': ('FSUB.S', '1010011', '000', '0000100', 'R', 'f'),
-    'fmul.s': ('FMUL.S', '1010011', '000', '0001000', 'R', 'f'),
-    'fdiv.s': ('FDIV.S', '1010011', '000', '0001100', 'R', 'f'),
-    'fsqrt.s': ('FSQRT.S', '1010011', '000', '0101100', 'R', 'f'),
-    'fmin.s': ('FMIN.S', '1010011', '001', '0000000', 'R', 'f'),
+    # NO R4 : https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/f.html#sec:single-float-compute
+    'fadd.s': ('FADD.S', '1010011', RNDMode.RNE, '0000000', 'R', 'f'),
+    'fsub.s': ('FSUB.S', '1010011', RNDMode.RNE, '0000100', 'R', 'f'),
+    'fmul.s': ('FMUL.S', '1010011', RNDMode.RNE, '0001000', 'R', 'f'),
+    'fdiv.s': ('FDIV.S', '1010011', RNDMode.RNE, '0001100', 'R', 'f'),
+    'fsqrt.s': ('FSQRT.S', '1010011', RNDMode.RNE, '0101100', 'R', 'f'),
+    'fmin.s': ('FMIN.S', '1010011', '000', '0000000', 'R', 'f'),
     'fmax.s': ('FMAX.S', '1010011', '001', '0000100', 'R', 'f'),
-    'fcvt.w.s': ('FCVT.W.S', '1010011', '000', '1100000', 'R', 'f'),
-    'fcvt.wu.s': ('FCVT.WU.S', '1010011', '000', '1100001', 'R', 'f'),
-    'fcvt.s.w': ('FCVT.S.W', '1010011', '000', '1101000', 'R', 'f'),
-    'fcvt.s.wu': ('FCVT.S.WU', '1010011', '000', '1101001', 'R', 'f'),
+    'fcvt.w.s': ('FCVT.W.S', '1010011',  RNDMode.RNE, '1100000', 'R', 'f'),
+    'fcvt.wu.s': ('FCVT.WU.S', '1010011',  RNDMode.RNE, '1100001', 'R', 'f'),
+    'fcvt.s.w': ('FCVT.S.W', '1010011',  RNDMode.RNE, '1101000', 'R', 'f'),
+    'fcvt.s.wu': ('FCVT.S.WU', '1010011',  RNDMode.RNE, '1101001', 'R', 'f'),
     'feq.s': ('FEQ.S', '1010011', '010', '1010000', 'R', 'f'),
     'flt.s': ('FLT.S', '1010011', '001', '1010000', 'R', 'f'),
     'fle.s': ('FLE.S', '1010011', '000', '1010000', 'R', 'f'),
@@ -143,9 +167,7 @@ PSEUDO_INSTRUCTION_MAP = {
     "fmv.s": ["fsgnj.s %arg0, %arg1, %arg1"],  # Move a floating-point value
     "fabs.s": ["fsgnjx.s %arg0, %arg1, %arg1"],   # Absolute value of a floating-point number
     "fneg.s": ["fsgnjn.s %arg0, %arg1, %arg1"],   # Negate a floating-point number
-    "flts.s": ["flt.s %arg0, %arg1, %arg2"],    # Set rd to 1 if rs1 < rs2
-    "feqs.s": ["feq.s %arg0, %arg1, %arg2"],    # Set rd to 1 if rs1 == rs2
-    "fles.s": ["fle.s %arg0, %arg1, %arg2"]     # Set rd to 1 if rs1 <= rs2
+    # TODO: add CSR pseudo instructions for f extension
 }
 
 
