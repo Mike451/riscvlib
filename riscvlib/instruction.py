@@ -58,7 +58,6 @@ class Instruction:
         :return: Instruction
         """
         mnemonic, args = parse_riscv_instruction_line(text)
-
         if _get_instruction_type(mnemonic) == "R":
             return RInstruction(mnemonic, *args)
         elif _get_instruction_type(mnemonic) == "I":
@@ -113,7 +112,7 @@ def parse_riscv_instruction_line(instruction):
     :param instruction: string - The instruction in the form 'add rd,r1,r2' or 'sw RD, offset(r1)'
     :return: tuple - (mnemonic, *args)
     """
-    pattern = r"^\s*([a-zA-Z]+)\s*(.*)$"
+    pattern = r"^\s*([a-z\.]+)\s*(.*)$"
 
     # Match the instruction against the pattern
     match = re.match(pattern, instruction)

@@ -153,7 +153,7 @@ class TestPseudoInstructions(unittest.TestCase):
         for tup in test_data:
             m, args = parse_riscv_instruction_line(tup[0])
             out = translate_pseudo_instruction(m, *args)
-            self.assertEqual(tup[1], out, f"Failed on '{tup[0]}'")
+            self.assertEqual(tup[1], out, f"Pseudo Failed on '{tup[0]}'")
 
     def test_pseudo_expands_multiple_instructs(self):
         # 'la' expands to 2 instructions
@@ -173,3 +173,9 @@ class TestBExtension(unittest.TestCase):
         self.assertEqual("01100000000000011001000010010011", i.to_bitstring())
 
 
+class TestFExtension(unittest.TestCase):
+
+    def test_F_instructions(self):
+        i = Instruction.from_line("fadd.s f1, f5, f6")  # R type instruction
+        # note: RM defaults to which ever value is specified in func3 in this case 000
+        self.assertEqual("00000000011000101000000011010011", i.to_bitstring())
