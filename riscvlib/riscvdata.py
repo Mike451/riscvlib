@@ -1,4 +1,26 @@
 
+class RNDMode:
+    #  Used in F extension as a sub for func3; compiler sets rounding mode for instruction
+    # TODO: Convert into enum when py version supports
+    RNE = '000'  # round nearest
+    RTZ = '001'  # round towards zero
+    RDN = '010'  # round down
+    RUP = '011'  # round up
+    RMM = '100'  # round nearest, ties to max magnitude
+    RSV0 = '101'  # Reserved
+    RSV1 = '101'  # Reserved
+    DYN = '111'  # Dynamic - Rounding mode set by target machine via fp control register
+
+    @staticmethod
+    def modes():
+        return (
+            RNDMode.RNE,
+            RNDMode.RDN,
+            RNDMode.RUP,
+            RNDMode.RMM,
+            RNDMode.DYN
+        )
+
 
 #  instruction: (name, opcode, func3, func7, itype, ext)
 INSTRUCTION_MAP = {
@@ -86,6 +108,26 @@ INSTRUCTION_MAP = {
     'csrrwi': ('CSRRWI', '1110011', '101', None, 'I', 'zicsr'),
     'csrrsi': ('CSRRSI', '1110011', '110', None, 'I', 'zicsr'),
     'csrrci': ('CSRRCI', '1110011', '111', None, 'I', 'zicsr'),
+
+    # Note: F instruction Rounding Mode (RM) set by the "func3" field. This may change.
+    # NO R4 : https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/f.html#sec:single-float-compute
+    'fadd.s': ('FADD.S', '1010011', RNDMode.RNE, '0000000', 'R', 'f'),
+    'fsub.s': ('FSUB.S', '1010011', RNDMode.RNE, '0000100', 'R', 'f'),
+    'fmul.s': ('FMUL.S', '1010011', RNDMode.RNE, '0001000', 'R', 'f'),
+    'fdiv.s': ('FDIV.S', '1010011', RNDMode.RNE, '0001100', 'R', 'f'),
+    'fsqrt.s': ('FSQRT.S', '1010011', RNDMode.RNE, '0101100', 'R', 'f'),
+    'fmin.s': ('FMIN.S', '1010011', '000', '0000000', 'R', 'f'),
+    'fmax.s': ('FMAX.S', '1010011', '001', '0000100', 'R', 'f'),
+    'fcvt.w.s': ('FCVT.W.S', '1010011',  RNDMode.RNE, '1100000', 'R', 'f'),
+    'fcvt.wu.s': ('FCVT.WU.S', '1010011',  RNDMode.RNE, '1100001', 'R', 'f'),
+    'fcvt.s.w': ('FCVT.S.W', '1010011',  RNDMode.RNE, '1101000', 'R', 'f'),
+    'fcvt.s.wu': ('FCVT.S.WU', '1010011',  RNDMode.RNE, '1101001', 'R', 'f'),
+    'feq.s': ('FEQ.S', '1010011', '010', '1010000', 'R', 'f'),
+    'flt.s': ('FLT.S', '1010011', '001', '1010000', 'R', 'f'),
+    'fle.s': ('FLE.S', '1010011', '000', '1010000', 'R', 'f'),
+    'fsgnj.s': ('FSGNJ.S', '1010011', '000', '0010000', 'R', 'f'),
+    'fsgnjn.s': ('FSGNJN.S', '1010011', '001', '0010000', 'R', 'f'),
+    'fsgnjx.s': ('FSGNJX.S', '1010011', '010', '0010000', 'R', 'f'),
 }
 
 # map pseudo instruction name --> implementation with arg placeholders
@@ -121,6 +163,11 @@ PSEUDO_INSTRUCTION_MAP = {
     "snez": ["sltu %arg0, x0, %arg1"],  # Set rd to 1 if rs1 is non-zero, else 0
     "sltz": ["slt %arg0, %arg1, x0"],  # Set rd to 1 if rs1 < 0, else 0
     "sgtz": ["slt %arg0, x0, %arg1"],  # Set rd to 1 if rs1 > 0, else 0
+    # f ext
+    "fmv.s": ["fsgnj.s %arg0, %arg1, %arg1"],  # Move a floating-point value
+    "fabs.s": ["fsgnjx.s %arg0, %arg1, %arg1"],   # Absolute value of a floating-point number
+    "fneg.s": ["fsgnjn.s %arg0, %arg1, %arg1"],   # Negate a floating-point number
+    # TODO: add CSR pseudo instructions for f extension
 }
 
 
@@ -129,7 +176,7 @@ pseudo_instr_list = list(PSEUDO_INSTRUCTION_MAP.keys())
 
 
 # registers  "lookup": ('name', int)
-REGISTER_MAP = {
+STANDARD_REGISTER_MAP = {
     'x0': ('x0', 0), 'zero': ('x0', 0), 'x1': ('x1', 1), 'ra': ('x1', 1), 'x2': ('x2', 2), 'sp': ('x2', 2),
     'x3': ('x3', 3), 'gp': ('x3', 3), 'x4': ('x4', 4), 'tp': ('x4', 4), 'x5': ('x5', 5), 't0': ('x5', 5),
     'x6': ('x6', 6), 't1': ('x6', 6), 'x7': ('x7', 7), 't2': ('x7', 7), 'x8': ('x8', 8),
@@ -144,3 +191,24 @@ REGISTER_MAP = {
     'x29': ('x29', 29), 't4': ('x29', 29), 'x30': ('x30', 30), 't5': ('x30', 30), 'x31': ('x31', 31),
     't6': ('x31', 31), 's0': ('x8', 8), 'fp': ('x8', 8)
 }
+
+F_EXT_REGISTER_MAP = {
+      "ft0": ["f0", 0], "f0": ["f0", 0], "ft1": ["f1", 1], "f1": ["f1", 1], "ft2": ["f2", 2],
+      "f2": ["f2", 2], "ft3": ["f3", 3], "f3": ["f3", 3], "ft4": ["f4", 4], "f4": ["f4", 4],
+      "ft5": ["f5", 5], "f5": ["f5", 5], "ft6": ["f6", 6], "f6": ["f6", 6], "ft7": ["f7", 7],
+      "f7": ["f7", 7], "fs0": ["f8", 8], "f8": ["f8", 8], "fs1": ["f9", 9], "f9": ["f9", 9],
+      "fa0": ["f10", 10], "f10": ["f10", 10], "fa1": ["f11", 11], "f11": ["f11", 11],
+      "fa2": ["f12", 12], "f12": ["f12", 12], "fa3": ["f13", 13], "f13": ["f13", 13],
+      "fa4": ["f14", 14], "f14": ["f14", 14], "fa5": ["f15", 15], "f15": ["f15", 15],
+      "fa6": ["f16", 16], "f16": ["f16", 16], "fa7": ["f17", 17], "f17": ["f17", 17],
+      "fs2": ["f18", 18], "f18": ["f18", 18], "fs3": ["f19", 19], "f19": ["f19", 19],
+      "fs4": ["f20", 20], "f20": ["f20", 20], "fs5": ["f21", 21], "f21": ["f21", 21],
+      "fs6": ["f22", 22], "f22": ["f22", 22], "fs7": ["f23", 23], "f23": ["f23", 23],
+      "fs8": ["f24", 24], "f24": ["f24", 24], "fs9": ["f25", 25], "f25": ["f25", 25],
+      "fs10": ["f26", 26], "f26": ["f26", 26], "fs11": ["f27", 27], "f27": ["f27", 27],
+      "ft8": ["f28", 28], "f28": ["f28", 28], "ft9": ["f29", 29], "f29": ["f29", 29],
+      "ft10": ["f30", 30], "f30": ["f30", 30], "ft11": ["f31", 31], "f31": ["f31", 31],
+      "fcsr": ["fcsr", 32],   # floating point control status reg (33rd register)
+}
+# all registers
+REGISTER_MAP = {**STANDARD_REGISTER_MAP, **F_EXT_REGISTER_MAP}

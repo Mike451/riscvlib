@@ -2,10 +2,11 @@
   
 Resources for working with RISC-V assembly in Python. 
 Supporting instruction creation, pseudo instruction translation and register lookup for extenions: 
-    - M Multiply and Divide
-    - B (Zba, Zbb, Zbc, Zbs) bit manipulation
-    - Zifencei  ebreak and ecall 
-    - Zicsr Control register instructions
+- M Multiply and Divide
+- F Single precision foating point (see limitations)
+- B (Zba, Zbb, Zbc, Zbs) bit manipulation
+- Zifencei  ebreak and ecall 
+- Zicsr Control register instructions
 
   
 # Installation  
@@ -66,11 +67,14 @@ b'\x13\xf55\xff'
 ```
 
 # Limitations
- - Currently supports RV32IMB (RISC-V 32 bit I,M and B(Zba,Zbb,Zbc,Zbs) extensions)
+ - Currently supports RV32IMFB (RISC-V 32 bit I,M,F and B(Zba,Zbb,Zbc,Zbs) extensions)
+ - F extension does not support "R4" type instructions i.e fmadd.s
+ - F extension does not support CSR based pseudo based instructions
+ - F extension Rounding Modes default to Nearest (000)
 
 # Future
- - Add F extension
- - 64 bit support
+ - Additional F extension support
+ - 32/64 bit annotations
 
 
 

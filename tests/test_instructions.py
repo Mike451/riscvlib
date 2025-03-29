@@ -117,16 +117,16 @@ class TestInstructions(unittest.TestCase):
         self.assertEqual("bne x13, x12, 2046", f"{i}")
 
     def test_uj_Instructions(self):
-        i = Instruction.from_line("jal ra, 2") # Jump and link
+        i = Instruction.from_line("jal ra, 2")  # Jump and link
         self.assertEqual("00000000001000000000000011101111", i.to_bitstring())
 
-        i = Instruction.from_line("jal ra,5000") # Jump and link
+        i = Instruction.from_line("jal ra,5000")  # Jump and link
         self.assertEqual("00111000100000000001000011101111", i.to_bitstring())
         # neg
         i = Instruction.from_line("jal x0, -64")  # back wards as in J .loop_start
         self.assertEqual("11111100000111111111000001101111", i.to_bitstring())
         # neg
-        i = Instruction.from_line("jal x0, -1000000") # back wards as in J .loop_start
+        i = Instruction.from_line("jal x0, -1000000")  # back wards as in J .loop_start
         self.assertEqual("11011100000100001011000001101111", i.to_bitstring())
 
 
@@ -153,7 +153,7 @@ class TestPseudoInstructions(unittest.TestCase):
         for tup in test_data:
             m, args = parse_riscv_instruction_line(tup[0])
             out = translate_pseudo_instruction(m, *args)
-            self.assertEqual(tup[1], out, f"Failed on '{tup[0]}'")
+            self.assertEqual(tup[1], out, f"Pseudo Failed on '{tup[0]}'")
 
     def test_pseudo_expands_multiple_instructs(self):
         # 'la' expands to 2 instructions
@@ -173,3 +173,17 @@ class TestBExtension(unittest.TestCase):
         self.assertEqual("01100000000000011001000010010011", i.to_bitstring())
 
 
+class TestFExtension(unittest.TestCase):
+
+    def test_F_instructions(self):
+        i = Instruction.from_line("fadd.s f1, f5, f6")  # R type instruction
+        # note: RM encoded for nearest by default
+        self.assertEqual("00000000011000101000000011010011", i.to_bitstring())
+
+        i = Instruction.from_line("fsgnj.s f1, ft2, f5")  # R type instruction
+        # note: RM encoded for nearest by default
+        self.assertEqual("00100000010100010000000011010011", i.to_bitstring())
+
+    def test_F_pseudo(self):
+        out = translate_pseudo_instruction("fmv.s", "f1", "ft2")
+        self.assertEqual('fsgnj.s f1, ft2, ft2', out[0])
