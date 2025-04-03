@@ -13,7 +13,7 @@ class FP_RNDMode:
     RSV1 = '101'  # Reserved
     DYN = '111'  # Dynamic - Rounding mode set by target machine via fp control register
 
-# floatign point flags which are bits 0-4 in the FCSR
+# floating point flags which are bits 0-4 in the FCSR
 FP_FCSR_FLAGS = (
     # fCSR bits  0,1,2,3,4
     (0, "NX"),  # inexact
@@ -39,119 +39,119 @@ FP_CLASS_MASK_VALUES = (
 )
 
 
-class FP_CSR_REGISTERS:
+class FP_CSR_REG:
     FLAGS = 0x001  # name for flags portion of the csr
     RM = 0x002    # name for rounding mode portion of the csr
     FCSR = 0x003  # name for FSR (floating point status reg) of the csr i.e. Flags+RM bits 0-7
 
 
-#  instruction: (name, opcode, func3, func7, itype, ext)
+#  instruction: (name, opcode, func3, func7, itype, ext, RV32/RV64)
 INSTRUCTION_MAP = {
-    'add': ('ADD', '0110011', '000', '0000000', 'R', 'i'),
-    'sub': ('SUB', '0110011', '000', '0100000', 'R', 'i'),
-    'sll': ('SLL', '0110011', '001', '0000000', 'R', 'i'),
-    'slt': ('SLT', '0110011', '010', '0000000', 'R', 'i'),
-    'sltu': ('SLTU', '0110011', '011', '0000000', 'R', 'i'),
-    'xor': ('XOR', '0110011', '100', '0000000', 'R', 'i'),
-    'srl': ('SRL', '0110011', '101', '0000000', 'R', 'i'),
-    'sra': ('SRA', '0110011', '101', '0100000', 'R', 'i'),
-    'or': ('OR', '0110011', '110', '0000000', 'R', 'i'),
-    'and': ('AND', '0110011', '111', '0000000', 'R', 'i'),
-    'addw': ('ADDW', '0111011', '000', '0000000', 'R', 'i'),
-    'subw': ('SUBW', '0111011', '000', '0100000', 'R', 'i'),
-    'sllw': ('SLLW', '0111011', '001', '0000000', 'R', 'i'),
-    'slrw': ('SLRW', '0111011', '101', '0000000', 'R', 'i'),
-    'sraw': ('SRAW', '0111011', '101', '0100000', 'R', 'i'),
-    'addi': ('ADDI', '0010011', '000', None, 'I', 'i'),
-    'lb': ('LB', '0000011', '000', None, 'IL', 'i'),
-    'lh': ('LH', '0000011', '001', None, 'IL', 'i'),
-    'lw': ('LW', '0000011', '010', None, 'IL', 'i'),
-    'ld': ('LD', '0000011', '011', None, 'IL', 'i'),
-    'lbu': ('LBU', '0000011', '100', None, 'IL', 'i'),
-    'lhu': ('LHU', '0000011', '101', None, 'IL', 'i'),
-    'lwu': ('LWU', '0000011', '110', None, 'IL', 'i'),
-    'slli': ('SLLI', '0010011', '001', '0000000', 'I', 'i'),
-    'slti': ('SLTI', '0010011', '010', None, 'I', 'i'),
-    'sltiu': ('SLTIU', '0010011', '011', None, 'I', 'i'),
-    'xori': ('XORI', '0010011', '100', None, 'I', 'i'),
-    'srai': ('SRAI', '0010011', '101', '0100000', 'I', 'i'),
-    'srli': ("SRLI", "0010011", "101", "0000000", 'I', 'i'),  # Shift Right Logical
-    'ori': ('ORI', '0010011', '110', None, 'I', 'i'),
-    'andi': ('ANDI', '0010011', '111', None, 'I', 'i'),
-    'addiw': ('ADDIW', '0011011', '000', None, 'I', 'i'),
-    'slliw': ('SLLIW', '0011011', '001', '0000000', 'I', 'i'),
-    'srliw': ('SRLIW', '0011011', '101', '0000000', 'I', 'i'),
-    'sraiw': ('SRAIW', '0011011', '101', '0100000', 'I', 'i'),
-    'jalr': ('JALR', '1100111', '000', None, 'I', 'i'),
-    'sw': ('SW', '0100011', '010', None, 'S', 'i'),
-    'sb': ('SB', '0100011', '000', None, 'S', 'i'),
-    'sh': ('SH', '0100011', '001', None, 'S', 'i'),
-    'sd': ('SD', '0100011', '011', None, 'S', 'i'),
-    'beq': ('BEQ', '1100011', '000', None, 'SB', 'i'),
-    'bne': ('BNE', '1100011', '001', None, 'SB', 'i'),
-    'blt': ('BLT', '1100011', '100', None, 'SB', 'i'),
-    'bge': ('BGE', '1100011', '101', None, 'SB', 'i'),
-    'bltu': ('BLTU', '1100011', '110', None, 'SB', 'i'),
-    'bgeu': ('BGEU', '1100011', '111', None, 'SB', 'i'),
-    'auipc': ('AUIPC', '0010111', None, None, 'U', 'i'),
-    'lui': ('LUI', '0110111', None, None, 'U', 'i'),
-    'jal': ('JAL', '1101111', None, None, 'UJ', 'i'),
-    'mul': ('MUL', '0110011', '000', '0000001', 'R', 'm'),
-    'mulh': ('MULH', '0110011', '001', '0000001', 'R', 'm'),
-    'mulhsu': ('MULHSU', '0110011', '010', '0000001', 'R', 'm'),
-    'mulhu': ('MULHU', '0110011', '011', '0000001', 'R', 'm'),
-    'div': ('DIV', '0110011', '100', '0000001', 'R', 'm'),
-    'divu': ('DIVU', '0110011', '101', '0000001', 'R', 'm'),
-    'rem': ('REM', '0110011', '110', '0000001', 'R', 'm'),
-    'remu': ('REMU', '0110011', '111', '0000001', 'R', 'm'),
-    'andn': ('ANDN', '0110011', '111', '0100000', 'R', 'b'),
-    'orn': ('ORN', '0110011', '110', '0100000', 'R', 'b'),
-    'xnor': ('XNOR', '0110011', '100', '0100000', 'R', 'b'),
-    'clz': ('CLZ', '0010011', '001', '0110000', 'I', 'b'),
-    'ctz': ('CTZ', '0010011', '001', '0000001', 'I', 'b'),
-    'pcnt': ('PCNT', '0010011', '001', '0000010', 'I', 'b'),
-    'rol': ('ROL', '0110011', '001', '0110000', 'R', 'b'),
-    'ror': ('ROR', '0110011', '101', '0110000', 'R', 'b'),
-    'rev8': ('REV8', '0110011', '110', '0110100', 'R', 'b'),
-    'clmul': ('CLMUL', '0110011', '001', '0000101', 'R', 'b'),
-    'clmulr': ('CLMULR', '0110011', '101', '0000101', 'R', 'b'),
-    'clmulh': ('CLMULH', '0110011', '011', '0000101', 'R', 'b'),
-    'bclr': ('BCLR', '0110011', '001', '0100100', 'R', 'b'),
-    'bset': ('BSET', '0110011', '001', '0010100', 'R', 'b'),
-    'binv': ('BINV', '0110011', '001', '0110100', 'R', 'b'),
-    'bext': ('BEXT', '0110011', '101', '0100100', 'R', 'b'),
-    'bdep': ('BDEP', '0110011', '101', '0110100', 'R', 'b'),
-    'ecall': ('ECALL', '1110011', '000', '000000000000', 'I', 'zifencei'),
-    'ebreak': ('EBREAK', '1110011', '000', '000000000001', 'I', 'zifencei'),
-    'fence': ('FENCE', '0001111', '000', None, 'I', 'zifencei'),
-    'fence.i': ('FENCE.I', '0001111', '001', None, 'I', 'zifencei'),
-    'csrrw': ('CSRRW', '1110011', '001', None, 'I', 'zicsr'),  # csrrs
-    'csrrs': ('CSRRS', '1110011', '010', None, 'I', 'zicsr'),
-    'csrrc': ('CSRRC', '1110011', '011', None, 'I', 'zicsr'),
-    'csrrwi': ('CSRRWI', '1110011', '101', None, 'I', 'zicsr'),
-    'csrrsi': ('CSRRSI', '1110011', '110', None, 'I', 'zicsr'),
-    'csrrci': ('CSRRCI', '1110011', '111', None, 'I', 'zicsr'),
-
-    # Note: F instruction Rounding Mode (RM) set by the "func3" field. This may change.
+    'add': ('ADD', '0110011', '000', '0000000', 'R', 'i', '32/64'),
+    'sub': ('SUB', '0110011', '000', '0100000', 'R', 'i', '32/64'),
+    'sll': ('SLL', '0110011', '001', '0000000', 'R', 'i', '32/64'),
+    'slt': ('SLT', '0110011', '010', '0000000', 'R', 'i', '32/64'),
+    'sltu': ('SLTU', '0110011', '011', '0000000', 'R', 'i', '32/64'),
+    'xor': ('XOR', '0110011', '100', '0000000', 'R', 'i', '32/64'),
+    'srl': ('SRL', '0110011', '101', '0000000', 'R', 'i', '32/64'),
+    'sra': ('SRA', '0110011', '101', '0100000', 'R', 'i', '32/64'),
+    'or': ('OR', '0110011', '110', '0000000', 'R', 'i', '32/64'),
+    'and': ('AND', '0110011', '111', '0000000', 'R', 'i', '32/64'),
+    'addw': ('ADDW', '0111011', '000', '0000000', 'R', 'i', '64'),
+    'subw': ('SUBW', '0111011', '000', '0100000', 'R', 'i', '64'),
+    'sllw': ('SLLW', '0111011', '001', '0000000', 'R', 'i', '64'),
+    'slrw': ('SLRW', '0111011', '101', '0000000', 'R', 'i', '64'),
+    'sraw': ('SRAW', '0111011', '101', '0100000', 'R', 'i', '64'),
+    'addi': ('ADDI', '0010011', '000', None, 'I', 'i', '32/64'),
+    'lb': ('LB', '0000011', '000', None, 'IL', 'i', '32/64'),
+    'lh': ('LH', '0000011', '001', None, 'IL', 'i', '32/64'),
+    'lw': ('LW', '0000011', '010', None, 'IL', 'i', '32/64'),
+    'ld': ('LD', '0000011', '011', None, 'IL', 'i', '64'),
+    'lbu': ('LBU', '0000011', '100', None, 'IL', 'i', '32/64'),
+    'lhu': ('LHU', '0000011', '101', None, 'IL', 'i', '32/64'),
+    'lwu': ('LWU', '0000011', '110', None, 'IL', 'i', '64'),
+    'slli': ('SLLI', '0010011', '001', '0000000', 'I', 'i', '32/64'),
+    'slti': ('SLTI', '0010011', '010', None, 'I', 'i', '32/64'),
+    'sltiu': ('SLTIU', '0010011', '011', None, 'I', 'i', '32/64'),
+    'xori': ('XORI', '0010011', '100', None, 'I', 'i', '32/64'),
+    'srai': ('SRAI', '0010011', '101', '0100000', 'I', 'i', '32/64'),
+    'srli': ("SRLI", "0010011", "101", "0000000", 'I', 'i', '32/64'),  # Shift Right Logical
+    'ori': ('ORI', '0010011', '110', None, 'I', 'i', '32/64'),
+    'andi': ('ANDI', '0010011', '111', None, 'I', 'i', '32/64'),
+    'addiw': ('ADDIW', '0011011', '000', None, 'I', 'i', '64'),
+    'slliw': ('SLLIW', '0011011', '001', '0000000', 'I', 'i', '64'),
+    'srliw': ('SRLIW', '0011011', '101', '0000000', 'I', 'i', '64'),
+    'sraiw': ('SRAIW', '0011011', '101', '0100000', 'I', 'i', '64'),
+    'jalr': ('JALR', '1100111', '000', None, 'I', 'i', '32/64'),
+    'sw': ('SW', '0100011', '010', None, 'S', 'i', '32/64'),
+    'sb': ('SB', '0100011', '000', None, 'S', 'i', '32/64'),
+    'sh': ('SH', '0100011', '001', None, 'S', 'i', '32/64'),
+    'sd': ('SD', '0100011', '011', None, 'S', 'i', '64'),
+    'beq': ('BEQ', '1100011', '000', None, 'SB', 'i', '32/64'),
+    'bne': ('BNE', '1100011', '001', None, 'SB', 'i', '32/64'),
+    'blt': ('BLT', '1100011', '100', None, 'SB', 'i', '32/64'),
+    'bge': ('BGE', '1100011', '101', None, 'SB', 'i', '32/64'),
+    'bltu': ('BLTU', '1100011', '110', None, 'SB', 'i', '32/64'),
+    'bgeu': ('BGEU', '1100011', '111', None, 'SB', 'i', '32/64'),
+    'auipc': ('AUIPC', '0010111', None, None, 'U', 'i', '32/64'),
+    'lui': ('LUI', '0110111', None, None, 'U', 'i', '32/64'),
+    'jal': ('JAL', '1101111', None, None, 'UJ', 'i', '32/64'),
+    'mul': ('MUL', '0110011', '000', '0000001', 'R', 'm', '32/64'),
+    'mulh': ('MULH', '0110011', '001', '0000001', 'R', 'm', '32/64'),
+    'mulhsu': ('MULHSU', '0110011', '010', '0000001', 'R', 'm', '32/64'),
+    'mulhu': ('MULHU', '0110011', '011', '0000001', 'R', 'm', '32/64'),
+    'div': ('DIV', '0110011', '100', '0000001', 'R', 'm', '32/64'),
+    'divu': ('DIVU', '0110011', '101', '0000001', 'R', 'm', '32/64'),
+    'rem': ('REM', '0110011', '110', '0000001', 'R', 'm', '32/64'),
+    'remu': ('REMU', '0110011', '111', '0000001', 'R', 'm', '32/64'),
+    'andn': ('ANDN', '0110011', '111', '0100000', 'R', 'b', '32/64'),
+    'orn': ('ORN', '0110011', '110', '0100000', 'R', 'b', '32/64'),
+    'xnor': ('XNOR', '0110011', '100', '0100000', 'R', 'b', '32/64'),
+    'clz': ('CLZ', '0010011', '001', '0110000', 'I', 'b', '32/64'),
+    'ctz': ('CTZ', '0010011', '001', '0000001', 'I', 'b', '32/64'),
+    'pcnt': ('PCNT', '0010011', '001', '0000010', 'I', 'b', '32/64'),
+    'rol': ('ROL', '0110011', '001', '0110000', 'R', 'b', '32/64'),
+    'ror': ('ROR', '0110011', '101', '0110000', 'R', 'b', '32/64'),
+    'rev8': ('REV8', '0110011', '110', '0110100', 'R', 'b', '32/64'),
+    'clmul': ('CLMUL', '0110011', '001', '0000101', 'R', 'b', '32/64'),
+    'clmulr': ('CLMULR', '0110011', '101', '0000101', 'R', 'b', '32/64'),
+    'clmulh': ('CLMULH', '0110011', '011', '0000101', 'R', 'b', '32/64'),
+    'bclr': ('BCLR', '0110011', '001', '0100100', 'R', 'b', '32/64'),
+    'bset': ('BSET', '0110011', '001', '0010100', 'R', 'b', '32/64'),
+    'binv': ('BINV', '0110011', '001', '0110100', 'R', 'b', '32/64'),
+    'bext': ('BEXT', '0110011', '101', '0100100', 'R', 'b', '32/64'),
+    'bdep': ('BDEP', '0110011', '101', '0110100', 'R', 'b', '32/64'),
+    'ecall': ('ECALL', '1110011', '000', '000000000000', 'I', 'zifencei', '32/64'),
+    'ebreak': ('EBREAK', '1110011', '000', '000000000001', 'I', 'zifencei', '32/64'),
+    'fence': ('FENCE', '0001111', '000', None, 'I', 'zifencei', '32/64'),
+    'fence.i': ('FENCE.I', '0001111', '001', None, 'I', 'zifencei', '32/64'),
+    'csrrw': ('CSRRW', '1110011', '001', None, 'I', 'zicsr', '32/64'),  # csrrs
+    'csrrs': ('CSRRS', '1110011', '010', None, 'I', 'zicsr', '32/64'),
+    'csrrc': ('CSRRC', '1110011', '011', None, 'I', 'zicsr', '32/64'),
+    'csrrwi': ('CSRRWI', '1110011', '101', None, 'I', 'zicsr', '32/64'),
+    'csrrsi': ('CSRRSI', '1110011', '110', None, 'I', 'zicsr', '32/64'),
+    'csrrci': ('CSRRCI', '1110011', '111', None, 'I', 'zicsr', '32/64'),
+    # Note: F instruction Rounding Mode (RM) hard coded to 'nearest'.
     # NO R4 : https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/f.html#sec:single-float-compute
-    'fadd.s': ('FADD.S', '1010011', FP_RNDMode.RNE, '0000000', 'R', 'f'),
-    'fsub.s': ('FSUB.S', '1010011', FP_RNDMode.RNE, '0000100', 'R', 'f'),
-    'fmul.s': ('FMUL.S', '1010011', FP_RNDMode.RNE, '0001000', 'R', 'f'),
-    'fdiv.s': ('FDIV.S', '1010011', FP_RNDMode.RNE, '0001100', 'R', 'f'),
-    'fsqrt.s': ('FSQRT.S', '1010011', FP_RNDMode.RNE, '0101100', 'R', 'f'),
-    'fmin.s': ('FMIN.S', '1010011', '000', '0000000', 'R', 'f'),
-    'fmax.s': ('FMAX.S', '1010011', '001', '0000100', 'R', 'f'),
-    'fcvt.w.s': ('FCVT.W.S', '1010011', FP_RNDMode.RNE, '1100000', 'R', 'f'),
-    'fcvt.wu.s': ('FCVT.WU.S', '1010011', FP_RNDMode.RNE, '1100001', 'R', 'f'),
-    'fcvt.s.w': ('FCVT.S.W', '1010011', FP_RNDMode.RNE, '1101000', 'R', 'f'),
-    'fcvt.s.wu': ('FCVT.S.WU', '1010011', FP_RNDMode.RNE, '1101001', 'R', 'f'),
-    'feq.s': ('FEQ.S', '1010011', '010', '1010000', 'R', 'f'),
-    'flt.s': ('FLT.S', '1010011', '001', '1010000', 'R', 'f'),
-    'fle.s': ('FLE.S', '1010011', '000', '1010000', 'R', 'f'),
-    'fsgnj.s': ('FSGNJ.S', '1010011', '000', '0010000', 'R', 'f'),
-    'fsgnjn.s': ('FSGNJN.S', '1010011', '001', '0010000', 'R', 'f'),
-    'fsgnjx.s': ('FSGNJX.S', '1010011', '010', '0010000', 'R', 'f'),
+    'fadd.s': ('FADD.S', '1010011', FP_RNDMode.RNE, '0000000', 'R', 'f', '32/64'),
+    'fsub.s': ('FSUB.S', '1010011', FP_RNDMode.RNE, '0000100', 'R', 'f', '32/64'),
+    'fmul.s': ('FMUL.S', '1010011', FP_RNDMode.RNE, '0001000', 'R', 'f', '32/64'),
+    'fdiv.s': ('FDIV.S', '1010011', FP_RNDMode.RNE, '0001100', 'R', 'f', '32/64'),
+    'fsqrt.s': ('FSQRT.S', '1010011', FP_RNDMode.RNE, '0101100', 'R', 'f', '32/64'),
+    'fmin.s': ('FMIN.S', '1010011', '000', '0000000', 'R', 'f', '32/64'),
+    'fmax.s': ('FMAX.S', '1010011', '001', '0000100', 'R', 'f', '32/64'),
+    'fcvt.w.s': ('FCVT.W.S', '1010011', FP_RNDMode.RNE, '1100000', 'R', 'f', '32/64'),
+    'fcvt.wu.s': ('FCVT.WU.S', '1010011', FP_RNDMode.RNE, '1100001', 'R', 'f', '32/64'),
+    'fcvt.s.w': ('FCVT.S.W', '1010011', FP_RNDMode.RNE, '1101000', 'R', 'f', '32/64'),
+    'fcvt.s.wu': ('FCVT.S.WU', '1010011', FP_RNDMode.RNE, '1101001', 'R', 'f', '32/64'),
+    'feq.s': ('FEQ.S', '1010011', '010', '1010000', 'R', 'f', '32/64'),
+    'flt.s': ('FLT.S', '1010011', '001', '1010000', 'R', 'f', '32/64'),
+    'fle.s': ('FLE.S', '1010011', '000', '1010000', 'R', 'f', '32/64'),
+    'fsgnj.s': ('FSGNJ.S', '1010011', '000', '0010000', 'R', 'f', '32/64'),
+    'fsgnjn.s': ('FSGNJN.S', '1010011', '001', '0010000', 'R', 'f', '32/64'),
+    'fsgnjx.s': ('FSGNJX.S', '1010011', '010', '0010000', 'R', 'f', '32/64'),
 }
+
 
 # map pseudo instruction name --> implementation with arg placeholders
 PSEUDO_INSTRUCTION_MAP = {
@@ -191,16 +191,16 @@ PSEUDO_INSTRUCTION_MAP = {
     "fabs.s": ["fsgnjx.s %arg0, %arg1, %arg1"],   # Absolute value of a floating-point number
     "fneg.s": ["fsgnjn.s %arg0, %arg1, %arg1"],   # Negate a floating-point number
 
-    "frflags": [f"csrrs %arg0, {FP_CSR_REGISTERS.FLAGS}, x0"],  # read flags "register" into rd, x0 no mods
-    "fsflags": [f"csrrw x0, {FP_CSR_REGISTERS.FLAGS}, %arg0"],  # set flags "register"
-    "fsflagsi": [f"csrrwi %arg0, {FP_CSR_REGISTERS.FLAGS}, %arg1"],
+    "frflags": [f"csrrs %arg0, {FP_CSR_REG.FLAGS}, x0"],  # read flags "register" into rd, x0 no mods
+    "fsflags": [f"csrrw x0, {FP_CSR_REG.FLAGS}, %arg0"],  # set flags "register"
+    "fsflagsi": [f"csrrwi %arg0, {FP_CSR_REG.FLAGS}, %arg1"],
 
-    "frrm": [f"csrrs %arg0, {FP_CSR_REGISTERS.RM}, x0"],   # read rounding mode "register"
-    "fsrm": [f"csrrw x0, {FP_CSR_REGISTERS.RM}, %arg0"],
-    "fsrmi": [f"csrrwi %arg0, {FP_CSR_REGISTERS.RM}, %arg1"],
+    "frrm": [f"csrrs %arg0, {FP_CSR_REG.RM}, x0"],   # read rounding mode "register"
+    "fsrm": [f"csrrw x0, {FP_CSR_REG.RM}, %arg0"],
+    "fsrmi": [f"csrrwi %arg0, {FP_CSR_REG.RM}, %arg1"],
 
-    "fscsr": [f"csrrw %arg0, {FP_CSR_REGISTERS.FCSR}, x0"],
-    "frcsr": [f"csrrs x0, {FP_CSR_REGISTERS.FCSR}, %arg0"],
+    "fscsr": [f"csrrw %arg0, {FP_CSR_REG.FCSR}, x0"],
+    "frcsr": [f"csrrs x0, {FP_CSR_REG.FCSR}, %arg0"],
 }
 
 

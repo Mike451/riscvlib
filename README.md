@@ -73,7 +73,6 @@ b'\x13\xf55\xff'
 
 # Future
  - Additional F extension support
- - 32/64 bit annotations
  - A, C and D extensions
 
 
