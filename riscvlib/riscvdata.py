@@ -1,6 +1,8 @@
 
-class RNDMode:
-    #  Used in F extension as a sub for func3; compiler sets rounding mode for instruction
+# Floating point rounding mode, bits 5-7 in the FCSR
+class FP_RNDMode:
+    #  Used in F,D,Q,H extensions, current standard says always set as RNE when encoding the 'rm' fields
+    # CSR reg bits[5,8] 3 bits sub 5,6,7
     # TODO: Convert into enum when py version supports
     RNE = '000'  # round nearest
     RTZ = '001'  # round towards zero
@@ -11,15 +13,36 @@ class RNDMode:
     RSV1 = '101'  # Reserved
     DYN = '111'  # Dynamic - Rounding mode set by target machine via fp control register
 
-    @staticmethod
-    def modes():
-        return (
-            RNDMode.RNE,
-            RNDMode.RDN,
-            RNDMode.RUP,
-            RNDMode.RMM,
-            RNDMode.DYN
-        )
+# floatign point flags which are bits 0-4 in the FCSR
+FP_FCSR_FLAGS = (
+    # fCSR bits  0,1,2,3,4
+    (0, "NX"),  # inexact
+    (1, "UF"),  # Underflow
+    (2, "OF"),  # Overflow
+    (3, "DZ"),  # Divide by zero
+    (4, "NV"),  # Invalid
+)
+
+
+# floating point classification rd. Set (in rd) by 'fclass.s' a 10 bit mask will have 1 bit set as the classification
+FP_CLASS_MASK_VALUES = (
+    (0, "−inf"),  # bit[0] set i.e. the first bit
+    (1, "negative normal number"),
+    (2, "negative subnormal number"),
+    (3, "−0"),
+    (4, "+0"),
+    (5, "positive subnormal number"),
+    (6, "positive normal number"),
+    (7, "+inf"),
+    (8, "signaling NaN"),
+    (9, "quiet NaN"),  # 10th bit set i.e. bits[9]
+)
+
+
+class FP_CSR_REGISTERS:
+    FLAGS = 0x001  # name for flags portion of the csr
+    RM = 0x002    # name for rounding mode portion of the csr
+    FCSR = 0x003  # name for FSR (floating point status reg) of the csr i.e. Flags+RM bits 0-7
 
 
 #  instruction: (name, opcode, func3, func7, itype, ext)
@@ -102,7 +125,7 @@ INSTRUCTION_MAP = {
     'ebreak': ('EBREAK', '1110011', '000', '000000000001', 'I', 'zifencei'),
     'fence': ('FENCE', '0001111', '000', None, 'I', 'zifencei'),
     'fence.i': ('FENCE.I', '0001111', '001', None, 'I', 'zifencei'),
-    'csrrw': ('CSRRW', '1110011', '001', None, 'I', 'zicsr'),
+    'csrrw': ('CSRRW', '1110011', '001', None, 'I', 'zicsr'),  # csrrs
     'csrrs': ('CSRRS', '1110011', '010', None, 'I', 'zicsr'),
     'csrrc': ('CSRRC', '1110011', '011', None, 'I', 'zicsr'),
     'csrrwi': ('CSRRWI', '1110011', '101', None, 'I', 'zicsr'),
@@ -111,17 +134,17 @@ INSTRUCTION_MAP = {
 
     # Note: F instruction Rounding Mode (RM) set by the "func3" field. This may change.
     # NO R4 : https://five-embeddev.com/riscv-user-isa-manual/Priv-v1.12/f.html#sec:single-float-compute
-    'fadd.s': ('FADD.S', '1010011', RNDMode.RNE, '0000000', 'R', 'f'),
-    'fsub.s': ('FSUB.S', '1010011', RNDMode.RNE, '0000100', 'R', 'f'),
-    'fmul.s': ('FMUL.S', '1010011', RNDMode.RNE, '0001000', 'R', 'f'),
-    'fdiv.s': ('FDIV.S', '1010011', RNDMode.RNE, '0001100', 'R', 'f'),
-    'fsqrt.s': ('FSQRT.S', '1010011', RNDMode.RNE, '0101100', 'R', 'f'),
+    'fadd.s': ('FADD.S', '1010011', FP_RNDMode.RNE, '0000000', 'R', 'f'),
+    'fsub.s': ('FSUB.S', '1010011', FP_RNDMode.RNE, '0000100', 'R', 'f'),
+    'fmul.s': ('FMUL.S', '1010011', FP_RNDMode.RNE, '0001000', 'R', 'f'),
+    'fdiv.s': ('FDIV.S', '1010011', FP_RNDMode.RNE, '0001100', 'R', 'f'),
+    'fsqrt.s': ('FSQRT.S', '1010011', FP_RNDMode.RNE, '0101100', 'R', 'f'),
     'fmin.s': ('FMIN.S', '1010011', '000', '0000000', 'R', 'f'),
     'fmax.s': ('FMAX.S', '1010011', '001', '0000100', 'R', 'f'),
-    'fcvt.w.s': ('FCVT.W.S', '1010011',  RNDMode.RNE, '1100000', 'R', 'f'),
-    'fcvt.wu.s': ('FCVT.WU.S', '1010011',  RNDMode.RNE, '1100001', 'R', 'f'),
-    'fcvt.s.w': ('FCVT.S.W', '1010011',  RNDMode.RNE, '1101000', 'R', 'f'),
-    'fcvt.s.wu': ('FCVT.S.WU', '1010011',  RNDMode.RNE, '1101001', 'R', 'f'),
+    'fcvt.w.s': ('FCVT.W.S', '1010011', FP_RNDMode.RNE, '1100000', 'R', 'f'),
+    'fcvt.wu.s': ('FCVT.WU.S', '1010011', FP_RNDMode.RNE, '1100001', 'R', 'f'),
+    'fcvt.s.w': ('FCVT.S.W', '1010011', FP_RNDMode.RNE, '1101000', 'R', 'f'),
+    'fcvt.s.wu': ('FCVT.S.WU', '1010011', FP_RNDMode.RNE, '1101001', 'R', 'f'),
     'feq.s': ('FEQ.S', '1010011', '010', '1010000', 'R', 'f'),
     'flt.s': ('FLT.S', '1010011', '001', '1010000', 'R', 'f'),
     'fle.s': ('FLE.S', '1010011', '000', '1010000', 'R', 'f'),
@@ -167,7 +190,17 @@ PSEUDO_INSTRUCTION_MAP = {
     "fmv.s": ["fsgnj.s %arg0, %arg1, %arg1"],  # Move a floating-point value
     "fabs.s": ["fsgnjx.s %arg0, %arg1, %arg1"],   # Absolute value of a floating-point number
     "fneg.s": ["fsgnjn.s %arg0, %arg1, %arg1"],   # Negate a floating-point number
-    # TODO: add CSR pseudo instructions for f extension
+
+    "frflags": [f"csrrs %arg0, {FP_CSR_REGISTERS.FLAGS}, x0"],  # read flags "register" into rd, x0 no mods
+    "fsflags": [f"csrrw x0, {FP_CSR_REGISTERS.FLAGS}, %arg0"],  # set flags "register"
+    "fsflagsi": [f"csrrwi %arg0, {FP_CSR_REGISTERS.FLAGS}, %arg1"],
+
+    "frrm": [f"csrrs %arg0, {FP_CSR_REGISTERS.RM}, x0"],   # read rounding mode "register"
+    "fsrm": [f"csrrw x0, {FP_CSR_REGISTERS.RM}, %arg0"],
+    "fsrmi": [f"csrrwi %arg0, {FP_CSR_REGISTERS.RM}, %arg1"],
+
+    "fscsr": [f"csrrw %arg0, {FP_CSR_REGISTERS.FCSR}, x0"],
+    "frcsr": [f"csrrs x0, {FP_CSR_REGISTERS.FCSR}, %arg0"],
 }
 
 
@@ -208,7 +241,6 @@ F_EXT_REGISTER_MAP = {
       "fs10": ["f26", 26], "f26": ["f26", 26], "fs11": ["f27", 27], "f27": ["f27", 27],
       "ft8": ["f28", 28], "f28": ["f28", 28], "ft9": ["f29", 29], "f29": ["f29", 29],
       "ft10": ["f30", 30], "f30": ["f30", 30], "ft11": ["f31", 31], "f31": ["f31", 31],
-      "fcsr": ["fcsr", 32],   # floating point control status reg (33rd register)
 }
 # all registers
 REGISTER_MAP = {**STANDARD_REGISTER_MAP, **F_EXT_REGISTER_MAP}

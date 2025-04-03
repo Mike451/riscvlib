@@ -2,12 +2,12 @@
 ZERO_BYTES32 = b"\x00" * 32
 
 
-def sign_extend_str(bit_str, target_length=32):
+def sign_extend_str(bit_str:str, target_length=32):
     """
     Sign extend bitstring
-    :param bit_str: string
+    :param bit_str: str
     :param target_length: int
-    :return: string
+    :return: str
     """
     original_length = len(bit_str)
     if original_length >= target_length:
