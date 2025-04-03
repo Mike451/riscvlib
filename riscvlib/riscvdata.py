@@ -204,10 +204,6 @@ PSEUDO_INSTRUCTION_MAP = {
 }
 
 
-# list of pseudo instructions
-pseudo_instr_list = list(PSEUDO_INSTRUCTION_MAP.keys())
-
-
 # registers  "lookup": ('name', int)
 STANDARD_REGISTER_MAP = {
     'x0': ('x0', 0), 'zero': ('x0', 0), 'x1': ('x1', 1), 'ra': ('x1', 1), 'x2': ('x2', 2), 'sp': ('x2', 2),
