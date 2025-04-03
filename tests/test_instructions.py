@@ -187,3 +187,12 @@ class TestFExtension(unittest.TestCase):
     def test_F_pseudo(self):
         out = translate_pseudo_instruction("fmv.s", "f1", "ft2")
         self.assertEqual('fsgnj.s f1, ft2, ft2', out[0])
+
+        out = translate_pseudo_instruction("fsrm", "x1")
+        self.assertEqual('csrrw x0, 2, x1', out[0])
+
+        out = translate_pseudo_instruction("fsflags", "x1")
+        self.assertEqual('csrrw x0, 1, x1', out[0])
+
+        out = translate_pseudo_instruction("frrm", "x1")
+        self.assertEqual('csrrs x1, 2, x0', out[0])

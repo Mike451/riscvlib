@@ -69,12 +69,12 @@ b'\x13\xf55\xff'
 # Limitations
  - Currently supports RV32IMFB (RISC-V 32 bit I,M,F and B(Zba,Zbb,Zbc,Zbs) extensions)
  - F extension does not support "R4" type instructions i.e fmadd.s
- - F extension does not support CSR based pseudo based instructions
  - F extension Rounding Modes default to Nearest (000)
 
 # Future
  - Additional F extension support
  - 32/64 bit annotations
+ - A, C and D extensions
 
 
 
