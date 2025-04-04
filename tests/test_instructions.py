@@ -1,8 +1,8 @@
 import unittest
-from riscvlib.instruction import Instruction, translate_pseudo_instruction, parse_riscv_instruction_line
+from riscvlib.instruction import Instruction, translate_pseudo_instruction, parse_riscv_instruction_line, IInstruction
 
 
-class TestInstructions(unittest.TestCase):
+class TestBaseInstructions(unittest.TestCase):
     """
     Test known good bit patterns
     https://luplab.gitlab.io/rvcodecjs/#q=sub+x1,+x15,+x7&abi=false&isa=AUTO
@@ -196,3 +196,25 @@ class TestFExtension(unittest.TestCase):
 
         out = translate_pseudo_instruction("frrm", "x1")
         self.assertEqual('csrrs x1, 2, x0', out[0])
+
+
+class Test_CSR_Extension(unittest.TestCase):
+
+    def test_csrrw(self):
+
+        i = Instruction.from_line("csrrw x1, mie, x5")
+        self.assertEqual("00110000010000101001000011110011", i.to_bitstring())
+
+        i = IInstruction('csrrw', 'x1', 'mie', 'x5')
+        self.assertEqual("00110000010000101001000011110011", i.to_bitstring())
+
+    def test_csrrs(self):
+        i = Instruction.from_line("csrrs x10, 0x300, x11")  # Read mcycle, store in x10, and set IE in mie
+        self.assertEqual("00110000000001011010010101110011", i.to_bitstring())
+
+        i = IInstruction('csrrs', 'x10', 0x300, 'x11')
+        self.assertEqual("00110000000001011010010101110011", i.to_bitstring())
+
+    def test_csrrwi(self):
+        i = Instruction.from_line("csrrwi a0, mcycle, 0x0f")
+        self.assertEqual("10110000000001111101010101110011", i.to_bitstring())

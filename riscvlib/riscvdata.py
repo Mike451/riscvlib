@@ -240,3 +240,38 @@ F_EXT_REGISTER_MAP = {
 }
 # all registers
 REGISTER_MAP = {**STANDARD_REGISTER_MAP, **F_EXT_REGISTER_MAP}
+
+# lookup for CSR register names
+CSR_REG_LOOKUP = {
+    'mstatus': 768,  # Machine Status Register
+    'misa': 769,  # Machine ISA Register
+    'mie': 772,  # Machine Interrupt Enable Register
+    'mtvec': 773,  # Machine Trap-Handler Base Address
+    'mscratch': 832,  # Machine Scratch Register
+    'mepc': 833,  # Machine Exception Program Counter
+    'mcause': 834,  # Machine Trap Cause Register
+    'mtval': 835,  # Machine Trap Value Register
+    'mip': 836,  # Machine Interrupt Pending Register
+    'sstatus': 256,  # Supervisor Status Register
+    'sie': 260,  # Supervisor Interrupt Enable Register
+    'stvec': 261,  # Supervisor Trap-Handler Base Address
+    'sscratch': 320,  # Supervisor Scratch Register
+    'sepc': 321,  # Supervisor Exception Program Counter
+    'scause': 322,  # Supervisor Trap Cause Register
+    'stval': 323,  # Supervisor Trap Value Register
+    'sip': 324,  # Supervisor Interrupt Pending Register
+    'ustatus': 0,  # User Status Register
+    'uie': 4,  # User Interrupt Enable Register
+    'utvec': 5,  # User Trap-Handler Base Address
+    'uscratch': 64,  # User Scratch Register
+    'uepc': 65,  # User Exception Program Counter
+    'ucause': 66,  # User Trap Cause Register
+    'utval': 67,  # User Trap Value Register
+    'uip': 68,  # User Interrupt Pending Register
+    'mcycle': 2816,  # Machine Cycle Counter
+    'minstret': 2818,  # Machine Instructions Retired Counter
+    'mhpmcounter3': 2819,  # Machine Performance Monitoring Counter 3
+    'mhpmevent3': 803,  # Machine Performance Monitoring Event Selector 3
+}
+
+
