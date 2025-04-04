@@ -62,14 +62,14 @@ b'\x13\xf55\xff'
 >> from riscvlib.risvdata import INSTRUCTION_MAP
 
 >> INSTRUCTION_MAP['mul']
-('MUL', '0110011', '000', '0000001', 'R', 'm')
-# (name, opcode, func3, func7, itype, extension)
+('MUL', '0110011', '000', '0000001', 'R', 'm', '32/64')
+# (name, opcode, func3, func7, itype, extension, rv32/rv64)
 ```
 
 # Limitations
  - Currently supports RV32IMFB (RISC-V 32 bit I,M,F and B(Zba,Zbb,Zbc,Zbs) extensions)
  - F extension does not support "R4" type instructions i.e fmadd.s
- - F extension Rounding Modes default to Nearest (000)
+ - F extension Rounding Modes hardcoded to 'Nearest'(000)
 
 # Future
  - Additional F extension support
