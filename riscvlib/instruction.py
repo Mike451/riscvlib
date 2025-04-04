@@ -1,6 +1,6 @@
 import re
-from riscvlib.riscvdata import REGISTER_MAP, PSEUDO_INSTRUCTION_MAP, INSTRUCTION_MAP
-from riscvlib.utils import sign_extend_str, twos_complement_str
+from riscvlib.riscvdata import REGISTER_MAP, PSEUDO_INSTRUCTION_MAP, INSTRUCTION_MAP, CSR_REG_LOOKUP
+from riscvlib.utils import twos_complement_str, extend_bitstr
 
 
 def _get_instruction_type(mnemonic):
@@ -143,7 +143,8 @@ def parse_immediate(immediate_str, bits=12, signed=True):
         # hex
         # convert into binary, will already be 2'complement if negative
         bitstr = bin(int(immediate_str, 16))[2:]  # remove '0x'
-        return sign_extend_str(bitstr, bits)
+        ext_bit = bitstr[0] if signed else '0'
+        return extend_bitstr(bitstr, ext_bit=ext_bit)
     else:  # chars represent base10 with sign if negative
         # convert the char i.e "-156" to an int -156
         signed_int = int(float(immediate_str))
@@ -188,20 +189,40 @@ class IInstruction(Instruction):
     "CSRRWI", "CSRRSI", "CSRRCI"
     """
     def _build(self):
-        rd = REGISTER_MAP[self.args[0]][1]
-        rs1 = REGISTER_MAP[self.args[1]][1]
+        # CRS(Zicsr) extension instructions are a special case because... reasons?
+        if self.mnemonic in [k for k, v in INSTRUCTION_MAP.items() if v[5] == 'zicsr']:
+            # csrrw xd, 855|0xff|"mie", r1
+            rd = REGISTER_MAP[self.args[0]][1]
+            if self.mnemonic in ['csrrwi', 'csrrsi']:
+                # we have to encode the actual immediate in the place of r1, because...reasons.
+                i_str = f"{self.args[2]}"
+                imm = parse_immediate(i_str, signed=False, bits=5)
+                rs1 = int(imm, 2)
+            else:
+                rs1 = REGISTER_MAP[self.args[2]][1]
+            if  self.args[1] in CSR_REG_LOOKUP:
+                immed = str(CSR_REG_LOOKUP[self.args[1]])
+            else:
+                # literal
+                immed = str(self.args[1])
 
-        # I type with 2 args, both regs, encode zeros for immediate
-        immed = str(self.args[2] if len(self.args)==3 else 0)
-
-        if self.func7 is not None:
-            # some I type have a funct7 which needs to be encoded at the expense of the immediate val.
-            immd5_signed_bin = parse_immediate(immed, bits=5)
-            self._bits = f"{self.func7}{immd5_signed_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+            immd12_bin = parse_immediate(immed, signed=False, bits=12)
+            self._bits = f"{immd12_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
         else:
-            # format immediate as signed binary string
-            immd12_signed_bin = parse_immediate(immed)
-            self._bits = f"{immd12_signed_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+            rd = REGISTER_MAP[self.args[0]][1]
+            rs1 = REGISTER_MAP[self.args[1]][1]
+
+            # I type with 2 args, both regs, encode zeros for immediate
+            immed = str(self.args[2] if len(self.args) == 3 else 0)
+
+            if self.func7 is not None:
+                # some I type have a funct7 which needs to be encoded at the expense of the immediate val.
+                immd5_signed_bin = parse_immediate(immed, bits=5)
+                self._bits = f"{self.func7}{immd5_signed_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+            else:
+                # format immediate as signed binary string
+                immd12_signed_bin = parse_immediate(immed)
+                self._bits = f"{immd12_signed_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
 
     def __str__(self):
         return f"{self.mnemonic} {self.args[0]}, {self.args[1]}, {self.args[2]}"

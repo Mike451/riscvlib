@@ -21,6 +21,17 @@ def sign_extend_str(bit_str:str, target_length=32):
     return extended_bits + bit_str
 
 
+def extend_bitstr(bit_str:str, ext_bit:str= '0', bit_len:int=12):
+    """
+    Extend a bitstring to 'bit_len' length using 'extend_bit' as the extra padding
+    :param bit_str: str
+    :param ext_bit: str
+    :param bit_len: int
+    :return: str
+    """
+    return (ext_bit * (bit_len - len(bit_str))) + bit_str
+
+
 def twos_complement_str(bit_str):
     """
     convert a bitstring -> 2's complement of bitstring
