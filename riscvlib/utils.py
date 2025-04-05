@@ -2,32 +2,9 @@
 ZERO_BYTES32 = b"\x00" * 32
 
 
-def sign_extend_str(bit_str:str, target_length=32):
-    """
-    Sign extend bitstring
-    :param bit_str: str
-    :param target_length: int
-    :return: str
-    """
-    original_length = len(bit_str)
-    if original_length >= target_length:
-        return bit_str  # No need to extend
-
-    # Extract the most significant bit (MSB)
-    msb = bit_str[0]
-
-    # Repeat the MSB to fill the remaining bits
-    extended_bits = msb * (target_length - original_length)
-    return extended_bits + bit_str
-
-
 def extend_bitstr(bit_str:str, ext_bit:str= '0', bit_len:int=12):
     """
     Extend a bitstring to 'bit_len' length using 'extend_bit' as the extra padding
-    :param bit_str: str
-    :param ext_bit: str
-    :param bit_len: int
-    :return: str
     """
     return (ext_bit * (bit_len - len(bit_str))) + bit_str
 

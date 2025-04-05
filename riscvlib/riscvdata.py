@@ -150,6 +150,11 @@ INSTRUCTION_MAP = {
     'fsgnj.s': ('FSGNJ.S', '1010011', '000', '0010000', 'R', 'f', '32/64'),
     'fsgnjn.s': ('FSGNJN.S', '1010011', '001', '0010000', 'R', 'f', '32/64'),
     'fsgnjx.s': ('FSGNJX.S', '1010011', '010', '0010000', 'R', 'f', '32/64'),
+    # F ext R4 types
+    'fmadd.s': ('FMADD.S', '1000011', FP_RNDMode.RNE, None, 'R', 'f', '32/64'),
+    'fmsub.s': ('FMSUB.S', '1000111', FP_RNDMode.RNE, None, 'R', 'f', '32/64'),
+    'fnmadd.s': ('FNMADD.S', '1001111', FP_RNDMode.RNE, None, 'R', 'f', '32/64'),
+    'fnmsub.s': ('FNMSUB.S', '1001011', FP_RNDMode.RNE, None, 'R', 'f', '32/64'),
 }
 
 
@@ -272,6 +277,9 @@ CSR_REG_LOOKUP = {
     'minstret': 2818,  # Machine Instructions Retired Counter
     'mhpmcounter3': 2819,  # Machine Performance Monitoring Counter 3
     'mhpmevent3': 803,  # Machine Performance Monitoring Event Selector 3
+    'frm': FP_CSR_REG.RM,
+    'fflags': FP_CSR_REG.FLAGS,
+    'fcsr': FP_CSR_REG.FCSR,
 }
 
 
