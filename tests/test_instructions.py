@@ -1,5 +1,6 @@
 import unittest
-from riscvlib.instruction import Instruction, translate_pseudo_instruction, parse_riscv_instruction_line, IInstruction
+from riscvlib.instruction import (Instruction, translate_pseudo_instruction, parse_riscv_instruction_line,
+                                  IInstruction, CSRInstruction, RInstruction)
 
 
 class TestBaseInstructions(unittest.TestCase):
@@ -172,6 +173,10 @@ class TestBExtension(unittest.TestCase):
         i = Instruction.from_line("clz x1, x3")
         self.assertEqual("01100000000000011001000010010011", i.to_bitstring())
 
+        # no immd value
+        i2 = IInstruction('clz', 'x1', 3, None)
+        self.assertEqual("01100000000000011001000010010011", i2.to_bitstring())
+
 
 class TestFExtension(unittest.TestCase):
 
@@ -197,6 +202,19 @@ class TestFExtension(unittest.TestCase):
         out = translate_pseudo_instruction("frrm", "x1")
         self.assertEqual('csrrs x1, 2, x0', out[0])
 
+    def test_F_R4_instructions(self):
+        i = Instruction.from_line("fmadd.s f1, f5, f6, f7")  # R type instruction
+        # note: RM encoded for nearest by default
+        self.assertEqual("00111000011000101000000011000011", i.to_bitstring())
+
+        i = Instruction.from_line("fnmadd.s f1, f5, f6, f7")  # R type instruction
+        # note: RM encoded for nearest by default
+        self.assertEqual("00111000011000101000000011001111", i.to_bitstring())
+
+        # using R instruction class
+        i2 = RInstruction('fnmadd.s', 'f1', 'f5', 'f6', rs3='f7')
+        self.assertEqual("00111000011000101000000011001111", i2.to_bitstring())
+
 
 class Test_CSR_Extension(unittest.TestCase):
 
@@ -205,14 +223,14 @@ class Test_CSR_Extension(unittest.TestCase):
         i = Instruction.from_line("csrrw x1, mie, x5")
         self.assertEqual("00110000010000101001000011110011", i.to_bitstring())
 
-        i = IInstruction('csrrw', 'x1', 'mie', 'x5')
+        i = CSRInstruction('csrrw', 'x1', 'mie', 'x5')
         self.assertEqual("00110000010000101001000011110011", i.to_bitstring())
 
     def test_csrrs(self):
         i = Instruction.from_line("csrrs x10, 0x300, x11")  # Read mcycle, store in x10, and set IE in mie
         self.assertEqual("00110000000001011010010101110011", i.to_bitstring())
 
-        i = IInstruction('csrrs', 'x10', 0x300, 'x11')
+        i = CSRInstruction('csrrs', 'x10', 0x300, 'x11')
         self.assertEqual("00110000000001011010010101110011", i.to_bitstring())
 
     def test_csrrwi(self):
