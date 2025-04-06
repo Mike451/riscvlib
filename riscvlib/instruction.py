@@ -1,13 +1,11 @@
 import re
-from riscvlib.riscvdata import REGISTER_MAP, PSEUDO_INSTRUCTION_MAP, INSTRUCTION_MAP
-from riscvlib.utils import sign_extend_str, twos_complement_str
+from riscvlib.riscvdata import REGISTER_MAP, PSEUDO_INSTRUCTION_MAP, INSTRUCTION_MAP, CSR_REG_LOOKUP
+from riscvlib.utils import extend_bitstr, twos_complement
 
 
-def _get_instruction_type(mnemonic):
+def _get_instruction_type(mnemonic:str) -> str:
     """
     get Instruction Type for a given mnemonic
-    :param mnemonic: str - name
-    :return: str
     """
     return INSTRUCTION_MAP[mnemonic][4]
 
@@ -40,15 +38,6 @@ class Instruction:
     func3 = None
     func7 = None
     _bits = None
-    label = None
-
-    def __init__(self, mnemonic: str, *args, label=None, extra_offset=False):
-        self.mnemonic = mnemonic
-        # look up and set: opcode, func3 and func7 for a given mnemonic
-        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
-        self.args = list(args)
-        self.label = label  # label associated with this instruction i.e StartLoop: mv x1, x3
-        self.extra_offset = extra_offset  # this was a bonus instruction from a pseudo and adds extra offset ??
 
     @staticmethod
     def from_line(text: str):
@@ -57,22 +46,31 @@ class Instruction:
         :param text: string - the instruction i.e add x22, sp, x13
         :return: Instruction
         """
-        mnemonic, args = parse_riscv_instruction_line(text)
+        def to_int(str_or_int):
+            try:
+                return int(str_or_int)
+            except ValueError:
+                return int(str_or_int, 16)
 
+        mnemonic, args = parse_riscv_instruction_line(text)
         if _get_instruction_type(mnemonic) == "R":
             return RInstruction(mnemonic, *args)
+        elif mnemonic in ['csrrw', 'csrrs', 'csrrc']:  # Zicsr instructions
+            return CSRInstruction(mnemonic, args[0], args[1], args[2])
+        elif mnemonic in ['csrrwi', 'csrrsi', 'csrrci']:  # Zicsr immd instructions
+            return CSRImmdInstruction(mnemonic, args[0], args[1], to_int(args[2]))
         elif _get_instruction_type(mnemonic) == "I":
-            return IInstruction(mnemonic, *args)
+            return IInstruction(mnemonic, args[0], args[1], to_int(args[2]) if len(args) == 3 else 0)
         elif _get_instruction_type(mnemonic) == "IL":
-            return ILInstruction(mnemonic, *args)
+            return ILInstruction(mnemonic, args[0], args[1], to_int(args[2]))
         elif _get_instruction_type(mnemonic) == "S":
-            return SInstruction(mnemonic, *args)
+            return SInstruction(mnemonic, args[0], args[1], to_int(args[2]))
         elif _get_instruction_type(mnemonic) == "UJ":
-            return UJInstruction(mnemonic, *args)
+            return UJInstruction(mnemonic, args[0], to_int(args[1]))
         elif _get_instruction_type(mnemonic) == "U":
-            return UInstruction(mnemonic, *args)
+            return UInstruction(mnemonic, args[0], to_int(args[1]))
         elif _get_instruction_type(mnemonic) == "SB":
-            return SBInstruction(mnemonic, *args)
+            return SBInstruction(mnemonic, args[0], args[1], to_int(args[2]))
         else:
             raise ValueError(f"Unknown mnemonic '{mnemonic}'")
 
@@ -91,7 +89,7 @@ class Instruction:
         instr_int = self.to_int()
         return instr_int.to_bytes(4, byteorder='little', signed=False)
 
-    def to_int(self):
+    def to_int(self) -> int:
         """
         Convert instruction into an integer
         :return: int
@@ -103,8 +101,31 @@ class Instruction:
         # do all the real work
         raise NotImplementedError("Implement in derived class")
 
+    @staticmethod
+    def _get_csr(csr):
+        try: # special case "0x300" instead of 0x300
+            csr = int(csr, 16)
+        except (ValueError, TypeError):
+            pass
+        return csr if isinstance(csr, int) else CSR_REG_LOOKUP[csr]
+
+    @staticmethod
+    def _get_reg(reg):
+        return reg if isinstance(reg, int) else REGISTER_MAP[reg][1]
+
+    @staticmethod
+    def _imm2bits(imd:int, bit_len=12):
+        # convert int --> bitstring of length bit_len, if neg perform 2's complement
+
+        if imd < 0:
+            # neg offsets get 2's comp sign extended
+            val = twos_complement(abs(imd), bit_len)
+            return f"{val:0{bit_len}b}"
+        else:
+            return f"{imd:0{bit_len}b}"
+
     def __repr__(self):
-        return f"{self.__class__.__name__} '{self.mnemonic}' {self.args}"
+        return f"{self.__class__.__name__} '{self.mnemonic}'"
 
 
 def parse_riscv_instruction_line(instruction):
@@ -113,7 +134,7 @@ def parse_riscv_instruction_line(instruction):
     :param instruction: string - The instruction in the form 'add rd,r1,r2' or 'sw RD, offset(r1)'
     :return: tuple - (mnemonic, *args)
     """
-    pattern = r"^\s*([a-zA-Z]+)\s*(.*)$"
+    pattern = r"^\s*([a-z\.]+)\s*(.*)$"
 
     # Match the instruction against the pattern
     match = re.match(pattern, instruction)
@@ -131,81 +152,97 @@ def parse_riscv_instruction_line(instruction):
         raise ValueError(f"Invalid Instruction: '{instruction}'")
 
 
-def parse_immediate(immediate_str, bits=12, signed=True):
-    """
-    Parse immediate value, convert to 2's comp and sign extent if necessary
-    :param immediate_str: string - dec, hex, octal representation of an immediate value
-    :param bits: int - number of bits of output
-    :param signed: bool - Output will be treated as signed
-    :return: string - the bitstring representing a signed n bit immediate value
-    """
-    signed_int = 0
-    if immediate_str.startswith("0x"):
-        # hex
-        # convert into binary, will already be 2'complement if negative
-        bitstr = bin(int(immediate_str, 16))[2:]  # remove '0x'
-        return sign_extend_str(bitstr, bits)
-    else:  # chars represent base10 with sign if negative
-        # convert the char i.e "-156" to an int -156
-        signed_int = int(float(immediate_str))
-
-        if signed_int < 0:
-            # neg offsets get 2's comp sign extended
-            bit_str = format(signed_int, f'0{bits}b')
-            val = twos_complement_str(bit_str)
-            return val
-        else:
-            return f"{signed_int:0{bits}b}"
-
-
-def parse_address_offset_register(offset_reg_str):
-    # i.e.  sw a5,-20(s0)  where -20 is the offset and s0 is reg to offset
-    # ret will be offset str and register to offset in a tuple i.e (-20, s0)
-    vals = offset_reg_str.split("(")
-    vals[1] = vals[1].replace(")", "", 1)
-    return f"{parse_immediate(vals[0], bits=12, signed=True)}", vals[1]
-
-
 class RInstruction(Instruction):
     """
     Regular instruction i.e add x1, x3, x5
     """
+    def __init__(self, mnemonic:str, rd, rs1, rs2, rs3=None):
+        self.mnemonic = mnemonic
+        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
+        self.rd, self.rs1, self.rs2 = rd, rs1, rs2
+        self.rs3 = rs3
 
     def _build(self):
-        rd = REGISTER_MAP[self.args[0]][1]
-        rs1 = REGISTER_MAP[self.args[1]][1]
-        rs2 = REGISTER_MAP[self.args[2]][1]
-        self._bits = f"{self.func7}{rs2:05b}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+        rd = Instruction._get_reg(self.rd)
+        rs1 = Instruction._get_reg(self.rs1)
+        rs2 = Instruction._get_reg(self.rs2)
+
+        if self.rs3 is not None:
+            # R4 instruction used with instructions such as fmadd.s
+            rs3 = Instruction._get_reg(self.rs3)
+            self._bits = f"{rs3:05b}00{rs2:05b}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+        else:
+            # normal R instruction
+            self._bits = f"{self.func7}{rs2:05b}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
 
     def __str__(self):
-        return f"{self.mnemonic} {self.args[0]}, {self.args[1]}, {self.args[2]}"
+        return f"{self.mnemonic} {self.rd}, {self.rs1}, {self.rs2}"
 
 
 class IInstruction(Instruction):
-    """
-    # immediate type
-    "addi",   "slli", "slti", "sltiu", "xori", "slri", "srai", "ori", "andi", "addiw",
-    "slliw", "srliw", "sraiw","jalr", "ecall", "ebreak","CSRRW", "CSRRS", "CSRRC",
-    "CSRRWI", "CSRRSI", "CSRRCI"
-    """
-    def _build(self):
-        rd = REGISTER_MAP[self.args[0]][1]
-        rs1 = REGISTER_MAP[self.args[1]][1]
+    # Type I instruction
+    # note: immed is limited to 5 bits for several instructions so that func7 can be encoded
 
-        # I type with 2 args, both regs, encode zeros for immediate
-        immed = str(self.args[2] if len(self.args)==3 else 0)
+    def __init__(self, mnemonic:str, rd:int|str, rs1:int|str, imm5_12:int):
+        self.mnemonic = mnemonic
+        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
+        self.rd, self.rs1 = rd, rs1
+        # Some instructions (B ext) do not have an immed, support passing in None for positional imm arg
+        self.imm5_12 = imm5_12 if imm5_12 is not None else 0
+
+    def _build(self):
+        rd = Instruction._get_reg(self.rd)
+        rs1 = Instruction._get_reg(self.rs1)
 
         if self.func7 is not None:
             # some I type have a funct7 which needs to be encoded at the expense of the immediate val.
-            immd5_signed_bin = parse_immediate(immed, bits=5)
+            immd5_signed_bin = Instruction._imm2bits(self.imm5_12, bit_len=5)
             self._bits = f"{self.func7}{immd5_signed_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
         else:
-            # format immediate as signed binary string
-            immd12_signed_bin = parse_immediate(immed)
+            # Normal I type with 12 bit immediate
+            immd12_signed_bin = Instruction._imm2bits(self.imm5_12)
             self._bits = f"{immd12_signed_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
 
     def __str__(self):
-        return f"{self.mnemonic} {self.args[0]}, {self.args[1]}, {self.args[2]}"
+        return f"{self.mnemonic} {self.rd}, {self.rs1}, {self.imm5_12}"
+
+
+class CSRImmdInstruction(Instruction):
+    """CSRI (immediate) variant of 'I' instruction type
+    """
+    def __init__(self, mnemonic:str, rd:int|str, csr_reg:int|str, uimm5:int):
+        self.mnemonic = mnemonic
+        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
+        self.rd, self.csr, self.uimm5 = rd, csr_reg, uimm5
+
+    def _build(self):
+        rd = Instruction._get_reg(self.rd)
+        csr = Instruction._get_csr(self.csr)
+        # encode unsigned immd to 5 bits, discard excess bits
+        uimmd5_bin = extend_bitstr(bin(self.uimm5)[2:], bit_len=5)[:5]
+        self._bits = f"{csr:012b}{uimmd5_bin}{self.func3}{rd:05b}{self.opcode}"
+
+    def __str__(self):
+        return f"{self.mnemonic} {self.rd}, {self.csr}, {self.uimm5}"
+
+
+class CSRInstruction(Instruction):
+    # CSR variant of 'I' instruction type
+    def __init__(self, mnemonic:str, rd:int|str, csr_reg:int|str, rs1:int|str):
+        self.mnemonic = mnemonic
+        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
+        self.rd, self.rs1, self.csr = rd, rs1, csr_reg
+
+    def _build(self):
+        rd = Instruction._get_reg(self.rd)
+        rs1 = Instruction._get_reg(self.rs1)
+        csr = Instruction._get_csr(self.csr)
+        # extended 12 bit unsigned
+        csr_bin_12 = extend_bitstr(bin(csr)[2:], bit_len=12)
+        self._bits = f"{csr_bin_12}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+
+    def __str__(self):
+        return f"{self.mnemonic} {self.rd}, {self.csr}, {self.rs1}"
 
 
 class ILInstruction(Instruction):
@@ -214,16 +251,19 @@ class ILInstruction(Instruction):
     similar to S instruction
     "lb", "lw", "ld", "lbu", "lhu", "lwu",
     """
-    def _build(self):
-        rd = REGISTER_MAP[self.args[0]][1]  # value to store
-        rs1 = REGISTER_MAP[self.args[1]][1]  # holds target address that may be offset
+    def __init__(self, mnemonic:str, rd:int|str, rs1:int|str, imm12:int):
+        self.mnemonic = mnemonic
+        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
+        self.rd, self.rs1, self.imm12 = rd, rs1, imm12
 
-        # offset val for rs1 --> sign extended 12 bits
-        offset_val_str = f"{parse_immediate(self.args[2], bits=12, signed=True)}"
-        self._bits = f"{offset_val_str}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+    def _build(self):
+        rd = Instruction._get_reg(self.rd)
+        rs1 = Instruction._get_reg(self.rs1)  # holds target address that may be offset
+        offset_bin = Instruction._imm2bits(self.imm12)
+        self._bits = f"{offset_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
 
     def __str__(self):
-        return f"{self.mnemonic} {self.args[0]}, {self.args[2]}({self.args[1]})"
+        return f"{self.mnemonic} {self.rd}, {self.imm12}({self.rs1})"
 
 
 class SInstruction(Instruction):
@@ -232,47 +272,46 @@ class SInstruction(Instruction):
     i.e. sw rs2,+-offset(rs1)
     The SW, SH, and SB instructions store 32-bit, 16-bit, and 8-bit values from the low
     bits of register rs2 to memory.
-
     i.e. sw s0,24(sp)
     "sw", "sb", "sh", "sd"
     """
+    def __init__(self, mnemonic:str, rs2:int|str, rs1:int|str, imm12:int):
+        self.mnemonic = mnemonic
+        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
+        self.rs2, self.rs1, self.imm12 = rs2, rs1, imm12
 
     def _build(self):
-        rs2 = REGISTER_MAP[self.args[0]][1]  # value to store
-        rs1 = REGISTER_MAP[self.args[1]][1]  # holds target address that may be offset
+        rs2 = Instruction._get_reg(self.rs2)  # value to store
+        rs1 = Instruction._get_reg(self.rs1)  # holds target address that may be offset
 
         # offset val for rs1 --> sign extended 12 bits
-        offset_val_str = f"{parse_immediate(self.args[2], bits=12, signed=True)}"
+        offset_bits = Instruction._imm2bits(self.imm12)
 
         # split immediate
-        imm5 = offset_val_str[7:]
-        imm7 = offset_val_str[0:7]
-
+        imm5 = offset_bits[7:]
+        imm7 = offset_bits[0:7]
         self._bits = f"{imm7}{rs2:05b}{rs1:05b}{self.func3}{imm5}{self.opcode}"
 
     def __str__(self):
-        return f"{self.mnemonic} {self.args[0]}, {self.args[2]}({self.args[1]})"
+        return f"{self.mnemonic} {self.rs2}, {self.imm12}({self.rs1})"
 
 
 class UInstruction(Instruction):
     """
     i.e. LUI x2, 0xfffff000
     """
+    def __init__(self, mnemonic:str, rd:int|str, imm20:int):
+        self.mnemonic = mnemonic
+        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
+        self.rd, self.imm20 = rd, imm20
 
     def _build(self):
-        rd = REGISTER_MAP[self.args[0]][1]
-
-        # check for and get function  ##
-        immed = self.args[1]
-
-        # eval expressions if any for the immediate, vars & const have been eval by now
-        # so this should be int,bin, hex
-        immed = str(immed)
-        immd20_bin = parse_immediate(immed, bits=20, signed=False)
+        rd = Instruction._get_reg(self.rd)
+        immd20_bin = Instruction._imm2bits(self.imm20, bit_len=20)
         self._bits = f"{immd20_bin}{rd:05b}{self.opcode}"
 
     def __str__(self):
-        return f"{self.mnemonic} {self.args[0]}, {self.args[1]}"
+        return f"{self.mnemonic} {self.rd}, {self.imm20}"
 
 
 class UJInstruction(Instruction):
@@ -281,29 +320,28 @@ class UJInstruction(Instruction):
      representing a pc-relative offset to the target address
      jal x0, -8
     """
+    def __init__(self, mnemonic:str, rd:int|str, imm20:int):
+        self.mnemonic = mnemonic
+        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
+        self.rd, self.imm20 = rd, imm20
 
     def _build(self):
-        rd = REGISTER_MAP[self.args[0]][1]
+        rd = Instruction._get_reg(self.rd)
+        # valid immediate range(-2^20 to  2^20 - 1)
 
-        # get the bit pattern in the wrong order
-        imm_raw = parse_immediate(self.args[1], bits=21, signed=True)
+        # dropping the lsb; only even numbers; getting 21 bits
+        immd21_bin = Instruction._imm2bits(self.imm20, bit_len=21)
 
-        imm_21_signed = imm_raw[::-1]  # reverse for sanity
+        sign_bit = immd21_bin[0]
+        low_10 = immd21_bin[10:20]  # this is where the lsb dies
+        bit_11 = immd21_bin[10]
+        hi_8 = immd21_bin[1:9]
 
-        out_sign = imm_21_signed[-1]  # sign
-        out_12_19 = imm_21_signed[12:20]  # LSBs
-        out_11 = imm_21_signed[11]
-        out_1_10 = imm_21_signed[1:11]  # ignore lsb because always even
-
-        out_bits = f"{out_12_19}{out_11}{out_1_10}{out_sign}"[::-1]
-        self._bits = f"{out_bits}{rd:05b}{self.opcode}"
+        encoded_imm20 = f"{sign_bit}{low_10}{bit_11}{hi_8}"
+        self._bits = f"{encoded_imm20}{rd:05b}{self.opcode}"
 
     def __str__(self):
-        # the UJ type has a varying number of args based on mnemonic
-        if self.mnemonic == "jal":
-            return f"{self.mnemonic} {self.args[0]}, {self.args[1]}"
-        elif self.mnemonic == "jalr":
-            return f"{self.mnemonic} {self.args[0]}, {self.args[1]}({self.args[2]})"
+        return f"{self.mnemonic} {self.rd}, {self.imm20}"
 
 
 class SBInstruction(Instruction):
@@ -312,18 +350,22 @@ class SBInstruction(Instruction):
     i.e. beq x3, x0, 33
     beq rs1, rs2, imm
     """
+    def __init__(self, mnemonic:str, rs1:int|str, rs2:int|str, imm12:int):
+        self.mnemonic = mnemonic
+        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
+        self.rs1, self.rs2, self.imm12 = rs1, rs2, imm12
 
     def _build(self):
         # imm7 rs2 rs1 func3 imm5 opcode
-        rs1 = REGISTER_MAP[self.args[0]][1]
-        rs2 = REGISTER_MAP[self.args[1]][1]
-        
-        immd12_signed_bin = parse_immediate(self.args[2], bits=12)
-        imb_i12 = immd12_signed_bin[0]  # sign bit
-        imb_i11 = immd12_signed_bin[0]  # sign bit... again
-        imb_4 = immd12_signed_bin[7:11]  # 4 lsb left right shift 1 fill, because only multiples of 2
-        imb_6 = immd12_signed_bin[1:7]  # 6 msb are as they should be
+        rs1 = Instruction._get_reg(self.rs1)
+        rs2 = Instruction._get_reg(self.rs2)
+        imm12 = Instruction._imm2bits(self.imm12)
+
+        imb_i12 = imm12[0]  # sign bit
+        imb_i11 = imm12[0]  # sign bit... again
+        imb_4 = imm12[7:11]  # 4 lsb left right shift 1 fill, because only multiples of 2
+        imb_6 = imm12[1:7]  # 6 msb are as they should be
         self._bits = f"{imb_i12}{imb_6}{rs2:05b}{rs1:05b}{self.func3}{imb_4}{imb_i11}{self.opcode}"
 
     def __str__(self):
-        return f"{self.mnemonic} {self.args[0]}, {self.args[1]}, {self.args[2]}"
+        return f"{self.mnemonic} {self.rs1}, {self.rs2}, {self.imm12}"
