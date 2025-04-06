@@ -281,5 +281,3 @@ CSR_REG_LOOKUP = {
     'fflags': FP_CSR_REG.FLAGS,
     'fcsr': FP_CSR_REG.FCSR,
 }
-
-

@@ -1,32 +1,19 @@
 
-ZERO_BYTES32 = b"\x00" * 32
 
-
-def extend_bitstr(bit_str:str, ext_bit:str= '0', bit_len:int=12):
-    """
-    Extend a bitstring to 'bit_len' length using 'extend_bit' as the extra padding
-    """
+def extend_bitstr(bit_str:str, ext_bit:str='0', bit_len:int=12) -> str:
+    # Extend a bitstring to 'bit_len' length using 'extend_bit' as the extra padding
     return (ext_bit * (bit_len - len(bit_str))) + bit_str
 
 
-def twos_complement_str(bit_str):
+def twos_complement(value:int, bit_width:int) -> int:
+    # 2's complement on an int with a given bit length result
+    return ((1 << bit_width) - value) & ((1 << bit_width) - 1)
+
+
+def twos_complement_str(bit_str:str) -> str:
     """
     convert a bitstring -> 2's complement of bitstring
     :param bit_str: str - bitstring
     :return: str - 2's complement of input string
     """
-    # if passed a leading '-', replace with a zero, it's a python format thing
-    bit_str = bit_str.replace("-", "0", 1)
-    bit_str = bit_str.replace('0b', "", 1)
-
-    # Convert the bit string to an integer
-    unsigned_value = int(bit_str, 2)
-    bit_len = len(bit_str)
-
-    # Calculate the 2's complement
-    inverted_value = ~unsigned_value
-    twos_complement_value = (inverted_value + 1) & ((1 << bit_len) - 1)
-
-    # Convert back to a bit string
-    twos_complement_string = format(twos_complement_value, f"0{bit_len}b")
-    return twos_complement_string
+    return format(twos_complement(int(bit_str, 2),len(bit_str)), f"0{len(bit_str)}b")
