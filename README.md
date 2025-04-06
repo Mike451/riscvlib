@@ -2,6 +2,7 @@
   
 Resources for working with RISC-V assembly in Python. 
 Supporting instruction creation, pseudo instruction translation and register lookup for extenions: 
+- I Base Instruction Set
 - M Multiply and Divide
 - F Single precision floating point
 - B (Zba, Zbb, Zbc, Zbs) bit manipulation
@@ -44,6 +45,9 @@ andi a0, a1, -13
 b'\x13\xf55\xff'
 
 >> i = CSRInstruction('csrrw', 'x1', 'mie', 'x5')
+>> i.to_bitstring()
+"00110000010000101001000011110011"
+
 ```
 
 ## Pseudo Instruction Translation
@@ -66,10 +70,26 @@ b'\x13\xf55\xff'
 >> INSTRUCTION_MAP['mul']
 ('MUL', '0110011', '000', '0000001', 'R', 'm', '32/64')
 # (name, opcode, func3, func7, itype, extension, rv32/rv64)
+
+oppcode, func3, func7 = INSTRUCTION_MAP['fmadd.s'][1:4]
 ```
 
+# Project Intent
+The project has reached the MVP state. It does what I want it to do, and I am
+reasonably sure that no major bugs exist. I built this to use in my own projects
+after I found Python Risc-v tools somewhat lacking. I will fix bugs as they crop
+up. I will add features as I need them, or as they are requested.
+
+This is not an industrial strength library and is targeted at 
+hobbyists or light commercial use. I've made readability, ease of use and
+simplicity priorities.
+
+No warranties either stated or implied are associated with this project.
+
+Use the code, or just copy the data that I've compiled from
+multiple sources, often conflicting with each other on the exact details.
+
 # Limitations
- - Currently supports RV32IMFB (RISC-V 32 bit I,M,F and B(Zba,Zbb,Zbc,Zbs) extensions)
  - F extension Rounding Modes hardcoded to 'Nearest'(000)
 
 # Future

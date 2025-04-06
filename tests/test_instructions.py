@@ -118,16 +118,16 @@ class TestBaseInstructions(unittest.TestCase):
         self.assertEqual("bne x13, x12, 2046", f"{i}")
 
     def test_uj_Instructions(self):
-        i = Instruction.from_line("jal ra, 2")  # Jump and link
+        i = Instruction.from_line("jal ra, 2")  # Jump and link, compressed
         self.assertEqual("00000000001000000000000011101111", i.to_bitstring())
 
         i = Instruction.from_line("jal ra,5000")  # Jump and link
         self.assertEqual("00111000100000000001000011101111", i.to_bitstring())
         # neg
-        i = Instruction.from_line("jal x0, -64")  # back wards as in J .loop_start
+        i = Instruction.from_line("jal x0, -64")  # backwards as in 'j .loop_start'
         self.assertEqual("11111100000111111111000001101111", i.to_bitstring())
         # neg
-        i = Instruction.from_line("jal x0, -1000000")  # back wards as in J .loop_start
+        i = Instruction.from_line("jal x0, -1000000")  # back wards as in 'j .way_back'
         self.assertEqual("11011100000100001011000001101111", i.to_bitstring())
 
 
