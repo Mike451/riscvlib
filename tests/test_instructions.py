@@ -1,6 +1,6 @@
 import unittest
 from riscvlib.instruction import (Instruction, translate_pseudo_instruction, parse_riscv_instruction_line,
-                                  IInstruction, CSRInstruction, RInstruction)
+                                  IInstruction, CSRInstruction, RInstruction, BInstruction)
 
 
 class TestBaseInstructions(unittest.TestCase):
@@ -92,10 +92,9 @@ class TestBaseInstructions(unittest.TestCase):
         i = Instruction.from_line("sb x10, 64(x7)")
         self.assertEqual("00000100101000111000000000100011", i.to_bitstring())
 
-    def test_SB_instructions(self):
+    def test_B_instructions(self):
         # control flow
-
-        i = Instruction.from_line("beq x3, x4, -4096")
+        i = BInstruction("beq", 3,4, -4096)
         self.assertEqual("10000000010000011000000001100011", i.to_bitstring())
 
         i = Instruction.from_line("beq x3, x4, 4094")

@@ -69,8 +69,8 @@ class Instruction:
             return UJInstruction(mnemonic, args[0], to_int(args[1]))
         elif _get_instruction_type(mnemonic) == "U":
             return UInstruction(mnemonic, args[0], to_int(args[1]))
-        elif _get_instruction_type(mnemonic) == "SB":
-            return SBInstruction(mnemonic, args[0], args[1], to_int(args[2]))
+        elif _get_instruction_type(mnemonic) == "B":
+            return BInstruction(mnemonic, args[0], args[1], to_int(args[2]))
         else:
             raise ValueError(f"Unknown mnemonic '{mnemonic}'")
 
@@ -340,7 +340,7 @@ class UJInstruction(Instruction):
         return f"{self.mnemonic} {self.rd}, {self.imm20}"
 
 
-class SBInstruction(Instruction):
+class BInstruction(Instruction):
     """
     Branching instructions
     i.e. beq x3, x0, 33
