@@ -75,13 +75,13 @@ oppcode, func3, func7 = INSTRUCTION_MAP['fmadd.s'][1:4]
 ```
 
 # Project Intent
-The project has reached the MVP state. It does what I want it to do, and I am
+The project has reached the MVP(Minimum Viable Product) state. It does what I want it to do, and I am
 reasonably sure that no major bugs exist. I built this to use in my own projects
 after I found Python Risc-v tools somewhat lacking. I will fix bugs as they crop
 up. I will add features as I need them, or as they are requested.
 
 This is not an industrial strength library and is targeted at 
-hobbyists or light commercial use. I've made readability, ease of use and
+hobbyists/educational use. I've made readability, ease of use and
 simplicity priorities.
 
 No warranties either stated or implied are associated with this project.
