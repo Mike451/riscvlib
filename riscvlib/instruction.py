@@ -69,8 +69,8 @@ class Instruction:
             return UJInstruction(mnemonic, args[0], to_int(args[1]))
         elif _get_instruction_type(mnemonic) == "U":
             return UInstruction(mnemonic, args[0], to_int(args[1]))
-        elif _get_instruction_type(mnemonic) == "SB":
-            return SBInstruction(mnemonic, args[0], args[1], to_int(args[2]))
+        elif _get_instruction_type(mnemonic) == "B":
+            return BInstruction(mnemonic, args[0], args[1], to_int(args[2]))
         else:
             raise ValueError(f"Unknown mnemonic '{mnemonic}'")
 
@@ -285,12 +285,8 @@ class SInstruction(Instruction):
         rs1 = Instruction._get_reg(self.rs1)  # holds target address that may be offset
 
         # offset val for rs1 --> sign extended 12 bits
-        offset_bits = Instruction._imm2bits(self.imm12)
-
-        # split immediate
-        imm5 = offset_bits[7:]
-        imm7 = offset_bits[0:7]
-        self._bits = f"{imm7}{rs2:05b}{rs1:05b}{self.func3}{imm5}{self.opcode}"
+        imm12 = Instruction._imm2bits(self.imm12)
+        self._bits = f"{imm12[0:7]}{rs2:05b}{rs1:05b}{self.func3}{imm12[7:]}{self.opcode}"
 
     def __str__(self):
         return f"{self.mnemonic} {self.rs2}, {self.imm12}({self.rs1})"
@@ -344,11 +340,12 @@ class UJInstruction(Instruction):
         return f"{self.mnemonic} {self.rd}, {self.imm20}"
 
 
-class SBInstruction(Instruction):
+class BInstruction(Instruction):
     """
     Branching instructions
     i.e. beq x3, x0, 33
     beq rs1, rs2, imm
+    -4097 > immd < 4096   13 bits toss the lsb, always even so zero assumed
     """
     def __init__(self, mnemonic:str, rs1:int|str, rs2:int|str, imm12:int):
         self.mnemonic = mnemonic
@@ -359,13 +356,8 @@ class SBInstruction(Instruction):
         # imm7 rs2 rs1 func3 imm5 opcode
         rs1 = Instruction._get_reg(self.rs1)
         rs2 = Instruction._get_reg(self.rs2)
-        imm12 = Instruction._imm2bits(self.imm12)
-
-        imb_i12 = imm12[0]  # sign bit
-        imb_i11 = imm12[0]  # sign bit... again
-        imb_4 = imm12[7:11]  # 4 lsb left right shift 1 fill, because only multiples of 2
-        imb_6 = imm12[1:7]  # 6 msb are as they should be
-        self._bits = f"{imb_i12}{imb_6}{rs2:05b}{rs1:05b}{self.func3}{imb_4}{imb_i11}{self.opcode}"
+        ib13 = Instruction._imm2bits(self.imm12, bit_len=13)  # bit 13 will be dropped
+        self._bits = f"{ib13[0]}{ib13[2:8]}{rs2:05b}{rs1:05b}{self.func3}{ib13[8:12]}{ib13[1]}{self.opcode}"
 
     def __str__(self):
         return f"{self.mnemonic} {self.rs1}, {self.rs2}, {self.imm12}"
