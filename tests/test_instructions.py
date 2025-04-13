@@ -94,8 +94,13 @@ class TestBaseInstructions(unittest.TestCase):
 
     def test_SB_instructions(self):
         # control flow
-        i = Instruction.from_line("beq a0, a1, 1988")
-        self.assertEqual("01111100101101010000001001100011", i.to_bitstring())
+
+        i = Instruction.from_line("beq x3, x4, -4096")
+        self.assertEqual("10000000010000011000000001100011", i.to_bitstring())
+
+        i = Instruction.from_line("beq x3, x4, 4094")
+        self.assertEqual("01111110010000011000111111100011", i.to_bitstring())
+
         # neg
         i = Instruction.from_line("beq a0, a1, -66")
         self.assertEqual("11111010101101010000111111100011", i.to_bitstring())
