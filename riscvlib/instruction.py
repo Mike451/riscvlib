@@ -59,6 +59,8 @@ class Instruction:
             return CSRInstruction(mnemonic, args[0], args[1], args[2])
         elif mnemonic in ['csrrwi', 'csrrsi', 'csrrci']:  # Zicsr immd instructions
             return CSRImmdInstruction(mnemonic, args[0], args[1], to_int(args[2]))
+        elif mnemonic in ['ecall', 'ebreak']:  # Zicsr environ calls
+            return EnvInstruction(mnemonic)
         elif _get_instruction_type(mnemonic) == "I":
             return IInstruction(mnemonic, args[0], args[1], to_int(args[2]) if len(args) == 3 else 0)
         elif _get_instruction_type(mnemonic) == "IL":
@@ -179,6 +181,22 @@ class RInstruction(Instruction):
         return f"{self.mnemonic} {self.rd}, {self.rs1}, {self.rs2}"
 
 
+class EnvInstruction(Instruction):
+    # ecall, ebreak instructions
+    def __init__(self, mnemonic: str, ):
+        self.mnemonic = mnemonic
+
+        self.func12 = "0"*11
+        self.func12 += "1" if self.mnemonic == "ebreak" else "0"
+        self.opcode, self.func3 = INSTRUCTION_MAP[self.mnemonic][1:3]
+
+    def _build(self):
+        self._bits = f"{self.func12}00000{self.func3}00000{self.opcode}"
+
+    def __str__(self):
+        return f"{self.mnemonic}"
+
+
 class IInstruction(Instruction):
     # Type I instruction
     # note: immed is limited to 5 bits for several instructions so that func7 can be encoded
@@ -282,7 +300,7 @@ class SInstruction(Instruction):
 
     def _build(self):
         rs2 = Instruction._get_reg(self.rs2)  # value to store
-        rs1 = Instruction._get_reg(self.rs1)  # holds target address that may be offset
+        rs1 = Instruction._get_reg(self.rs1)  # holds target address offset by immed
 
         # offset val for rs1 --> sign extended 12 bits
         imm12 = Instruction._imm2bits(self.imm12)

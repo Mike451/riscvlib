@@ -41,6 +41,12 @@ class TestBaseInstructions(unittest.TestCase):
         i = Instruction.from_line("srai x1, x3, 31")
         self.assertEqual("01000001111100011101000010010011", i.to_bitstring())
 
+        # test 12 bit overflow (signed)
+        i = Instruction.from_line("addi x1, x2, -2200")
+        self.assertEqual("01110110100000010000000010010011", i.to_bitstring())
+
+
+
     def test_IL_instructions(self):
         # type IL in the assembler, loads
 
@@ -133,6 +139,13 @@ class TestBaseInstructions(unittest.TestCase):
         # neg
         i = Instruction.from_line("jal x0, -1000000")  # back wards as in 'j .way_back'
         self.assertEqual("11011100000100001011000001101111", i.to_bitstring())
+
+    def test_ecall_ebreak(self):
+        i = Instruction.from_line("ecall")  #
+        self.assertEqual("00000000000000000000000001110011", i.to_bitstring())
+
+        i = Instruction.from_line("ebreak")  #
+        self.assertEqual("00000000000100000000000001110011", i.to_bitstring())
 
 
 class TestPseudoInstructions(unittest.TestCase):
