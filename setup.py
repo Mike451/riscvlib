@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="riscvlib",
-    version="0.7.1",
+    version="0.7.2",
     author="Mike Harris",
     author_email="mike.harris451@gmail.com",
     description="Resources for working with RISC-V in Python",
