@@ -3,13 +3,6 @@ from riscvlib.riscvdata import REGISTER_MAP, PSEUDO_INSTRUCTION_MAP, INSTRUCTION
 from riscvlib.utils import extend_bitstr, twos_complement
 
 
-def _get_instruction_type(mnemonic:str) -> str:
-    """
-    get Instruction Type for a given mnemonic
-    """
-    return INSTRUCTION_MAP[mnemonic][4]
-
-
 def translate_pseudo_instruction(mnemonic, *args):
     """
     Convert a pseudo instruction into one or more standard instructions and apply args
@@ -53,23 +46,29 @@ class Instruction:
                 return int(str_or_int, 16)
 
         mnemonic, args = parse_riscv_instruction_line(text)
-        if _get_instruction_type(mnemonic) == "R":
+        subtype = INSTRUCTION_MAP[mnemonic][7]
+
+        if subtype == "R":
             return RInstruction(mnemonic, *args)
-        elif mnemonic in ['csrrw', 'csrrs', 'csrrc']:  # Zicsr instructions
+        elif subtype == "R4":
+            return R4Instruction(mnemonic, *args)
+        elif subtype == "CSR":  # Zicsr instructions
             return CSRInstruction(mnemonic, args[0], args[1], args[2])
-        elif mnemonic in ['csrrwi', 'csrrsi', 'csrrci']:  # Zicsr immd instructions
+        elif subtype == "CSRI":  # Zicsr immd instructions
             return CSRImmdInstruction(mnemonic, args[0], args[1], to_int(args[2]))
-        elif _get_instruction_type(mnemonic) == "I":
+        elif subtype == "ENV":  # Zicsr environ calls
+            return EnvInstruction(mnemonic)
+        elif subtype == "I":
             return IInstruction(mnemonic, args[0], args[1], to_int(args[2]) if len(args) == 3 else 0)
-        elif _get_instruction_type(mnemonic) == "IL":
+        elif subtype == "IL":
             return ILInstruction(mnemonic, args[0], args[1], to_int(args[2]))
-        elif _get_instruction_type(mnemonic) == "S":
+        elif subtype == "S":
             return SInstruction(mnemonic, args[0], args[1], to_int(args[2]))
-        elif _get_instruction_type(mnemonic) == "UJ":
+        elif subtype == "UJ":
             return UJInstruction(mnemonic, args[0], to_int(args[1]))
-        elif _get_instruction_type(mnemonic) == "U":
+        elif subtype == "U":
             return UInstruction(mnemonic, args[0], to_int(args[1]))
-        elif _get_instruction_type(mnemonic) == "B":
+        elif subtype == "B":
             return BInstruction(mnemonic, args[0], args[1], to_int(args[2]))
         else:
             raise ValueError(f"Unknown mnemonic '{mnemonic}'")
@@ -179,6 +178,43 @@ class RInstruction(Instruction):
         return f"{self.mnemonic} {self.rd}, {self.rs1}, {self.rs2}"
 
 
+class R4Instruction(Instruction):
+    # R4 instruction subtype, used in f/d extension
+
+    def __init__(self, mnemonic:str, rd, rs1, rs2, rs3):
+        self.mnemonic = mnemonic
+        self.opcode, self.func3, self.func7 = INSTRUCTION_MAP[self.mnemonic][1:4]
+        self.rd, self.rs1, self.rs2, self.rs3 = rd, rs1, rs2, rs3
+
+    def _build(self):
+        rd = Instruction._get_reg(self.rd)
+        rs1 = Instruction._get_reg(self.rs1)
+        rs2 = Instruction._get_reg(self.rs2)
+        rs3 = Instruction._get_reg(self.rs3)
+
+        # R4 instruction used with instructions such as fmadd.s
+        self._bits = f"{rs3:05b}00{rs2:05b}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+
+    def __str__(self):
+        return f"{self.mnemonic} {self.rd}, {self.rs1}, {self.rs2}, {self.rs3}"
+
+
+class EnvInstruction(Instruction):
+    # ecall, ebreak instructions
+    def __init__(self, mnemonic: str, ):
+        self.mnemonic = mnemonic
+
+        self.func12 = "0"*11
+        self.func12 += "1" if self.mnemonic == "ebreak" else "0"
+        self.opcode, self.func3 = INSTRUCTION_MAP[self.mnemonic][1:3]
+
+    def _build(self):
+        self._bits = f"{self.func12}00000{self.func3}00000{self.opcode}"
+
+    def __str__(self):
+        return f"{self.mnemonic}"
+
+
 class IInstruction(Instruction):
     # Type I instruction
     # note: immed is limited to 5 bits for several instructions so that func7 can be encoded
@@ -282,7 +318,7 @@ class SInstruction(Instruction):
 
     def _build(self):
         rs2 = Instruction._get_reg(self.rs2)  # value to store
-        rs1 = Instruction._get_reg(self.rs1)  # holds target address that may be offset
+        rs1 = Instruction._get_reg(self.rs1)  # holds target address offset by immed
 
         # offset val for rs1 --> sign extended 12 bits
         imm12 = Instruction._imm2bits(self.imm12)
