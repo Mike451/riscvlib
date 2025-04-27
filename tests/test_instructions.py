@@ -154,7 +154,6 @@ class TestPseudoInstructions(unittest.TestCase):
         test_data = [
             ("li x1, 55", ["addi x1, x0, 55"]),
             ("mv a0, x3", ["addi a0, x3, 0"]),
-            ("li x1, 55", ["addi x1, x0, 55"]),
             ("nop", ["addi x0, x0, 0"]),
             ("not x3, x4", ["xori x3, x4, -1"]),
             ("neg x5, x7", ["sub x5, x0, x7"]),
