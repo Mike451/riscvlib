@@ -102,7 +102,7 @@ class Instruction:
 
     @staticmethod
     def _get_csr(csr):
-        try: # special case "0x300" instead of 0x300
+        try:  # special case "0x300" instead of 0x300
             csr = int(csr, 16)
         except (ValueError, TypeError):
             pass
@@ -237,7 +237,7 @@ class IInstruction(Instruction):
         else:
             # Normal I type with 12 bit immediate
             immd12_signed_bin = Instruction._imm2bits(self.imm5_12)
-            self._bits = f"{immd12_signed_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+            self._bits = f"{immd12_signed_bin[:12]}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
 
     def __str__(self):
         return f"{self.mnemonic} {self.rd}, {self.rs1}, {self.imm5_12}"
@@ -296,7 +296,7 @@ class ILInstruction(Instruction):
         rd = Instruction._get_reg(self.rd)
         rs1 = Instruction._get_reg(self.rs1)  # holds target address that may be offset
         offset_bin = Instruction._imm2bits(self.imm12)
-        self._bits = f"{offset_bin}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
+        self._bits = f"{offset_bin[:12]}{rs1:05b}{self.func3}{rd:05b}{self.opcode}"
 
     def __str__(self):
         return f"{self.mnemonic} {self.rd}, {self.imm12}({self.rs1})"
@@ -322,7 +322,7 @@ class SInstruction(Instruction):
 
         # offset val for rs1 --> sign extended 12 bits
         imm12 = Instruction._imm2bits(self.imm12)
-        self._bits = f"{imm12[0:7]}{rs2:05b}{rs1:05b}{self.func3}{imm12[7:]}{self.opcode}"
+        self._bits = f"{imm12[0:7]}{rs2:05b}{rs1:05b}{self.func3}{imm12[7:12]}{self.opcode}"
 
     def __str__(self):
         return f"{self.mnemonic} {self.rs2}, {self.imm12}({self.rs1})"
@@ -340,7 +340,7 @@ class UInstruction(Instruction):
     def _build(self):
         rd = Instruction._get_reg(self.rd)
         immd20_bin = Instruction._imm2bits(self.imm20, bit_len=20)
-        self._bits = f"{immd20_bin}{rd:05b}{self.opcode}"
+        self._bits = f"{immd20_bin[:20]}{rd:05b}{self.opcode}"
 
     def __str__(self):
         return f"{self.mnemonic} {self.rd}, {self.imm20}"
@@ -370,7 +370,7 @@ class UJInstruction(Instruction):
         hi_8 = immd21_bin[1:9]
 
         encoded_imm20 = f"{sign_bit}{low_10}{bit_11}{hi_8}"
-        self._bits = f"{encoded_imm20}{rd:05b}{self.opcode}"
+        self._bits = f"{encoded_imm20[:20]}{rd:05b}{self.opcode}"
 
     def __str__(self):
         return f"{self.mnemonic} {self.rd}, {self.imm20}"

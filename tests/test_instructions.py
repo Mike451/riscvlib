@@ -26,6 +26,10 @@ class TestBaseInstructions(unittest.TestCase):
         i = Instruction.from_line("addi a0, a1, 42")
         self.assertEqual("00000010101001011000010100010011", i.to_bitstring())
 
+        # overflow
+        i = Instruction.from_line("addi a0, a1, 0xffff")
+        self.assertEqual("11111111111101011000010100010011", i.to_bitstring())
+
         # neg immediate
         i = Instruction.from_line("andi a0, a1, -13")
         self.assertEqual("11111111001101011111010100010011", i.to_bitstring())
@@ -52,6 +56,11 @@ class TestBaseInstructions(unittest.TestCase):
 
         i = Instruction.from_line("lw s0, 0(t1)")
         self.assertEqual("00000000000000110010010000000011", i.to_bitstring())
+
+        # overflow immed val
+        i = Instruction.from_line("lw s0, 999999(t1)")
+        self.assertEqual("11110100001000110010010000000011", i.to_bitstring())
+        self.assertEqual(32,len(i.to_bitstring()))  # 32 bits
 
         # neg offset
         i = Instruction.from_line("lw s0, -12(t1)")
