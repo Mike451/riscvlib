@@ -54,6 +54,7 @@ INSTRUCTION_MAP = {
     'slt': ('SLT', '0110011', '010', '0000000', 'R', 'i', '32/64', 'R'),
     'sltu': ('SLTU', '0110011', '011', '0000000', 'R', 'i', '32/64', 'R'),
     'xor': ('XOR', '0110011', '100', '0000000', 'R', 'i', '32/64', 'R'),
+    'xori': ('XORI', '0010011', '100', None, 'I', 'i', '32/64,' 'I'),
     'srl': ('SRL', '0110011', '101', '0000000', 'R', 'i', '32/64', 'R'),
     'sra': ('SRA', '0110011', '101', '0100000', 'R', 'i', '32/64', 'R'),
     'or': ('OR', '0110011', '110', '0000000', 'R', 'i', '32/64', 'R'),
@@ -76,7 +77,6 @@ INSTRUCTION_MAP = {
     'slli': ('SLLI', '0010011', '001', '0000000', 'I', 'i', '32/64', 'I'),
     'slti': ('SLTI', '0010011', '010', None, 'I', 'i', '32/64', 'I'),
     'sltiu': ('SLTIU', '0010011', '011', None, 'I', 'i', '32/64', 'I'),
-    'xori': ('XORI', '0010011', '100', None, 'I', 'i', '32/64,' 'I'),
     'srai': ('SRAI', '0010011', '101', '0100000', 'I', 'i', '32/64', 'I'),
     'srli': ("SRLI", "0010011", "101", "0000000", 'I', 'i', '32/64', 'I'),  # Shift Right Logical
     # bitwize
@@ -173,7 +173,7 @@ PSEUDO_INSTRUCTION_MAP = {
     "not": ["xori %arg0, %arg1, -1"],  # One's complement
     "neg": ["sub %arg0, x0, %arg1"],  # Two's complement
     "seqz": ["sltiu %arg0, %arg1, 1"],  # Set if = zero
-    "li": ["addi %arg0, x0, %arg1"],
+    "li": ["addi %arg0, x0, %arg1"],  # may expand into 2 or 3 if immd > 12 bits
     "call": ["jal x1, %arg0"],   # invoke subroutines
 
     # jumps/returns
