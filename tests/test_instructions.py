@@ -49,6 +49,15 @@ class TestBaseInstructions(unittest.TestCase):
         i = Instruction.from_line("addi x1, x2, -2200")
         self.assertEqual("01110110100000010000000010010011", i.to_bitstring())
 
+        # slli
+        i = Instruction.from_line("slli x2, x1, 31")
+        self.assertEqual("00000001111100001001000100010011", i.to_bitstring())
+
+        # overflow immediate shamt
+        i = Instruction.from_line("slli x2, x1, 128")
+        self.assertEqual(32, len(i.to_bitstring()))
+        self.assertEqual("00000001000000001001000100010011", i.to_bitstring())
+
 
 
     def test_IL_instructions(self):

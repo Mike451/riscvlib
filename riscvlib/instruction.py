@@ -119,9 +119,9 @@ class Instruction:
         if imd < 0:
             # neg offsets get 2's comp sign extended
             val = twos_complement(abs(imd), bit_len)
-            return f"{val:0{bit_len}b}"
+            return f"{val:0{bit_len}b}"[:bit_len]
         else:
-            return f"{imd:0{bit_len}b}"
+            return f"{imd:0{bit_len}b}"[:bit_len]
 
     def __repr__(self):
         return f"{self.__class__.__name__} '{self.mnemonic}'"
